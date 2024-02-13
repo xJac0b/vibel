@@ -1,0 +1,18 @@
+include: package:linteo/analysis_options.yaml
+
+linter:
+  rules:
+    prefer_if_elements_to_conditional_expressions: false
+
+analyzer:
+  exclude:
+    - "build/**"
+    - "bin/cache/**"
+    - "assets/**"
+    - "ios/**"
+    - "android/**"
+    - "**.freezed.dart"
+    - "**.cached.dart"
+    - "**.g.dart"
+    - "**.gr.dart"
+    - "**.config.dart"
