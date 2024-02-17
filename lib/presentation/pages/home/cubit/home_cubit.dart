@@ -65,11 +65,13 @@ class HomeCubit extends Cubit<HomeState> {
                 ? b.title.toLowerCase().compareTo(a.title.toLowerCase())
                 : a.title.toLowerCase().compareTo(b.title.toLowerCase()),
           );
+        final newIndex =
+            sorted.indexWhere((element) => previousPlayingId == element.id);
+        value.bottomCardController.jumpToPage(newIndex);
         emit(
           value.copyWith(
             songs: sorted,
-            currentSong:
-                sorted.indexWhere((element) => previousPlayingId == element.id),
+            currentSong: newIndex,
           ),
         );
       },
