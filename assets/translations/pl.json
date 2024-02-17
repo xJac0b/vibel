@@ -1,3 +1,19 @@
 {
-    "hello": "cześć"
+    "hello": "cześć",
+    "theme":{
+        "light": "Jasny",
+        "dark": "Ciemny",
+        "system": "Systemowy"
+    },
+    "settings":
+    {
+        "app_bar": "Ustawienia",
+        "language": "Język",
+        "theme": "Motyw"
+    },
+    "language":
+    {
+        "english": "Angielski",
+        "polish": "Polski"
+    }
 }

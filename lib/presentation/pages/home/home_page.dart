@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
-import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:hooked_bloc/hooked_bloc.dart';
 import 'package:vibel/presentation/pages/home/cubit/home_cubit.dart';
-import 'package:vibel/presentation/styles/app_typography.dart';
-import 'package:vibel/presentation/styles/theme/app_theme_provider.dart';
+import 'package:vibel/presentation/pages/home/widgets/audio_list.dart';
+import 'package:vibel/presentation/pages/home/widgets/bottom_card.dart';
+import 'package:vibel/presentation/pages/home/widgets/no_permission_view.dart';
+import 'package:vibel/presentation/pages/home/widgets/search_section.dart';
+import 'package:vibel/presentation/styles/app_spacings.dart';
 
 class HomePage extends HookWidget {
   const HomePage({super.key});
@@ -12,42 +14,68 @@ class HomePage extends HookWidget {
   @override
   Widget build(BuildContext context) {
     final cubit = useBloc<HomeCubit>();
+    final state = useBlocBuilder(cubit);
+
+    final controller = useTextEditingController();
+    useListenable(controller);
+
+    final sortedAsc = useState<bool?>(null);
+
+    useEffect(
+      () {
+        cubit.loadAudios();
+        return null;
+      },
+      [],
+    );
+
     return Scaffold(
-      body: CustomScrollView(
-        slivers: [
-          SliverAppBar(
-            centerTitle: true,
-            title: const Text('Home'),
-            floating: true,
-            snap: true,
-            actions: [
-              IconButton(
-                icon: const Icon(FontAwesomeIcons.sun),
-                onPressed: () {
-                  cubit.changeTheme(
-                    AppThemeProvider.of(context).theme.brightness ==
-                            Brightness.light
-                        ? ThemeMode.dark
-                        : ThemeMode.light,
-                  );
-                },
-              ),
-            ],
-          ),
-          SliverList(
-            delegate: SliverChildBuilderDelegate(
-              (BuildContext context, int index) {
-                return ListTile(
-                  title: Text(
-                    'Item $index',
-                    style: AppTypography.of(context).body,
+      body: SafeArea(
+        child: Stack(
+          children: [
+            CustomScrollView(
+              slivers: [
+                // HomeAppBar(cubit: cubit),
+                // const SizedBox(height: AppSpacings.sixteen),
+                SearchSection(
+                  controller: controller,
+                  sortedAsc: sortedAsc,
+                  cubit: cubit,
+                ),
+                SliverPadding(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: AppSpacings.eight,
                   ),
-                );
-              },
-              childCount: 100,
+                  sliver: state.map(
+                    initial: (value) => const SliverFillRemaining(),
+                    noPermission: (value) => NoPermissionView(cubit: cubit),
+                    loaded: (loaded) => AudioList(
+                      searchBarText: controller.text,
+                      cubit: cubit,
+                      audios: loaded.songs,
+                      currentSong: loaded.currentSong,
+                      paused: loaded.paused,
+                    ),
+                  ),
+                ),
+              ],
             ),
-          ),
-        ],
+            state.mapOrNull(
+                  loaded: (loaded) {
+                    final song = loaded.songs[loaded.currentSong];
+                    return BottomCard(
+                      cubit: cubit,
+                      song: song,
+                      paused: loaded.paused,
+                      currentSong: loaded.currentSong,
+                      songs: loaded.songs,
+                      pageController: loaded.bottomCardController,
+                    );
+                  },
+                ) ??
+                const SizedBox.shrink(),
+          ],
+        ),
       ),
     );
   }

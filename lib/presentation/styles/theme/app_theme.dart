@@ -24,11 +24,21 @@ class AppTheme {
   ThemeData get theme =>
       (colors == AppColors.dark ? ThemeData.dark() : ThemeData.light())
           .copyWith(
+        iconTheme: IconThemeData(color: colors.hint),
+        highlightColor: Colors.transparent,
+        splashColor: Colors.transparent,
+        hoverColor: colors.hint.withOpacity(0.3),
+        focusColor: colors.hint.withOpacity(0.3),
+        primaryColor: colors.primary,
         scaffoldBackgroundColor: colors.background,
         textTheme: const TextTheme().apply(
           displayColor: colors.text,
           bodyColor: colors.text,
           fontFamily: fontFamily,
+        ),
+        appBarTheme: AppBarTheme(
+          backgroundColor: colors.background,
+          foregroundColor: colors.text,
         ),
       );
 
