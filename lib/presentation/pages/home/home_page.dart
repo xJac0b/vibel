@@ -35,8 +35,6 @@ class HomePage extends HookWidget {
           children: [
             CustomScrollView(
               slivers: [
-                // HomeAppBar(cubit: cubit),
-                // const SizedBox(height: AppSpacings.sixteen),
                 SearchSection(
                   controller: controller,
                   sortedAsc: sortedAsc,
@@ -70,6 +68,8 @@ class HomePage extends HookWidget {
                       currentSong: loaded.currentSong,
                       songs: loaded.songs,
                       pageController: loaded.bottomCardController,
+                      isShuffle: loaded.isShuffle,
+                      repeatMode: loaded.repeatMode,
                     );
                   },
                 ) ??

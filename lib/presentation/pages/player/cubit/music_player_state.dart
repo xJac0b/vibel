@@ -9,6 +9,8 @@ class MusicPlayerState with _$MusicPlayerState {
     required bool paused,
     required Duration duration,
     required Duration position,
+    required bool isShuffle,
+    required RepeatMode repeatMode,
   }) = _Loaded;
   const factory MusicPlayerState.noPermission() = _NoPermission;
   const factory MusicPlayerState.error() = _Error;

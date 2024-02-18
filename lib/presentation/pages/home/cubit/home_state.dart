@@ -8,6 +8,9 @@ class HomeState with _$HomeState {
     required int currentSong,
     required bool paused,
     required PageController bottomCardController,
+    required bool isShuffle,
+    required RepeatMode repeatMode,
+    required bool musicPlayerOpen,
   }) = _Loaded;
   const factory HomeState.noPermission() = _NoPermission;
 }

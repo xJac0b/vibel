@@ -1,3 +1,5 @@
+import 'dart:math';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:hooked_bloc/hooked_bloc.dart';
@@ -38,8 +40,12 @@ class SongPositionSlider extends HookWidget {
         disabledActiveTrackColor: context.colors.hint.withOpacity(0.7),
       ),
       child: Slider(
-        value: state.position?.inMilliseconds.toDouble() ??
-            position.inMilliseconds.toDouble(),
+        value: min(
+          state.position?.inMilliseconds.toDouble() ??
+              position.inMilliseconds.toDouble(),
+          state.duration?.inMilliseconds.toDouble() ??
+              duration.inMilliseconds.toDouble(),
+        ),
         min: 0,
         max: state.duration?.inMilliseconds.toDouble() ??
             duration.inMilliseconds.toDouble(),

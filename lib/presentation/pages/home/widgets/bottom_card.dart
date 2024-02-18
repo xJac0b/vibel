@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import 'package:marquee/marquee.dart';
 import 'package:on_audio_query/on_audio_query.dart';
 import 'package:vibel/core/extension.dart';
+import 'package:vibel/domain/player/repeat_mode.dart';
 import 'package:vibel/presentation/pages/home/cubit/home_cubit.dart';
 import 'package:vibel/presentation/pages/player/widgets/song_position_slider.dart';
 import 'package:vibel/presentation/router/routes.dart';
@@ -21,6 +22,8 @@ class BottomCard extends HookWidget {
     required this.paused,
     required this.songs,
     required this.pageController,
+    required this.isShuffle,
+    required this.repeatMode,
     super.key,
   });
 
@@ -30,6 +33,8 @@ class BottomCard extends HookWidget {
   final bool paused;
   final List<SongModel> songs;
   final PageController pageController;
+  final bool isShuffle;
+  final RepeatMode repeatMode;
 
   @override
   Widget build(BuildContext context) {
@@ -45,12 +50,23 @@ class BottomCard extends HookWidget {
         child: InkWell(
           overlayColor: MaterialStateProperty.all(Colors.transparent),
           onTap: () async {
-            final index = await context.push(
+            cubit.musicPlayer();
+            final (int, bool, RepeatMode)? data = await context.push(
               Routes.player,
-              extra: (songs, currentSong, paused),
+              extra: (
+                songs,
+                currentSong,
+                paused,
+                isShuffle,
+                repeatMode,
+              ),
             );
-            if (index != null) {
-              cubit.updateIndex(index as int);
+            if (data != null) {
+              cubit.updateAfterPlayerClosing(
+                index: data.$1,
+                isShuffle: data.$2,
+                repeatMode: data.$3,
+              );
             }
           },
           child: Card(
@@ -88,14 +104,22 @@ class BottomCard extends HookWidget {
                       SizedBox(
                         width: 220,
                         height: 50,
-                        child: PageView(
-                          onPageChanged: (value) =>
-                              cubit.next(prev: currentSong > value),
-                          controller: pageController,
-                          scrollDirection: Axis.horizontal,
-                          children: [
-                            for (var i = 0; i < songs.length; i++)
-                              Column(
+                        child: PageView.builder(
+                            onPageChanged: (value) async {
+                              if (currentSong < value) {
+                                cubit.nextButtonClicked();
+                              } else {
+                                cubit.prevButtonClicked();
+                              }
+                            },
+                            controller: pageController,
+                            scrollDirection: Axis.horizontal,
+                            itemCount: repeatMode == RepeatMode.repeatAll
+                                ? null
+                                : songs.length,
+                            itemBuilder: (context, index) {
+                              index %= songs.length;
+                              return Column(
                                 mainAxisAlignment: MainAxisAlignment.center,
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
@@ -103,32 +127,31 @@ class BottomCard extends HookWidget {
                                     width: 220,
                                     height: 30,
                                     child: hasTextOverflow(
-                                      songs[i].title,
+                                      songs[index].title,
                                       AppTypography.of(context).body,
                                       maxWidth: 220,
                                     )
                                         ? Marquee(
                                             blankSpace: AppSpacings.sixtyFour,
-                                            text: songs[i].title,
+                                            text: songs[index].title,
                                             style: AppTypography.of(
                                               context,
                                             ).body,
                                           )
                                         : Text(
-                                            songs[i].title,
+                                            songs[index].title,
                                             style: AppTypography.of(
                                               context,
                                             ).body,
                                           ),
                                   ),
                                   Text(
-                                    songs[i].artistName,
+                                    songs[index].artistName,
                                     style: AppTypography.of(context).overline,
                                   ),
                                 ],
-                              ),
-                          ],
-                        ),
+                              );
+                            },),
                       ),
                       const Spacer(),
                       IconButton(
@@ -148,7 +171,7 @@ class BottomCard extends HookWidget {
                   const Align(
                     alignment: Alignment.bottomLeft,
                     child: SongPositionSlider(readOnly: true),
-                  )
+                  ),
                 ],
               ),
             ),

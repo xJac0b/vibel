@@ -4,6 +4,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
 import 'package:injecteo/injecteo.dart';
 import 'package:on_audio_query/on_audio_query.dart';
+import 'package:vibel/domain/player/repeat_mode.dart';
 
 part 'home_cubit.freezed.dart';
 part 'home_state.dart';
@@ -12,10 +13,15 @@ part 'home_state.dart';
 class HomeCubit extends Cubit<HomeState> {
   HomeCubit(this.audioQuery, this.audioPlayer)
       : super(const HomeState.initial()) {
+    audioPlayer.onPlayerComplete.listen((event) {
+      state.mapOrNull(
+        loaded: (loaded) {
+          if (!loaded.musicPlayerOpen) onCompleted();
+        },
+      );
+    });
     audioPlayer.onPlayerStateChanged.listen((event) {
-      if (event == PlayerState.completed ||
-          event == PlayerState.stopped ||
-          event == PlayerState.paused) {
+      if (event == PlayerState.stopped || event == PlayerState.paused) {
         state.mapOrNull(
           loaded: (value) {
             emit(value.copyWith(paused: true));
@@ -51,7 +57,18 @@ class HomeCubit extends Cubit<HomeState> {
         currentSong: 0,
         paused: true,
         bottomCardController: PageController(initialPage: 0),
+        isShuffle: false,
+        repeatMode: RepeatMode.noRepeat,
+        musicPlayerOpen: false,
       ),
+    );
+  }
+
+  void musicPlayer() {
+    state.mapOrNull(
+      loaded: (value) {
+        emit(value.copyWith(musicPlayerOpen: true));
+      },
     );
   }
 
@@ -78,34 +95,46 @@ class HomeCubit extends Cubit<HomeState> {
     );
   }
 
-  void updateIndex(int index) {
+  void updateAfterPlayerClosing({
+    required int index,
+    required bool isShuffle,
+    required RepeatMode repeatMode,
+  }) {
     state.mapOrNull(
       loaded: (value) {
-        value.bottomCardController.jumpToPage(index);
-        emit(value.copyWith(currentSong: index));
+        if (value.bottomCardController.page?.toInt() != index) {
+          value.bottomCardController.jumpToPage(index);
+        }
+        emit(
+          value.copyWith(
+            currentSong: index,
+            isShuffle: isShuffle,
+            repeatMode: repeatMode,
+            musicPlayerOpen: false,
+          ),
+        );
       },
     );
   }
 
   void playAudio(int index) {
     state.mapOrNull(
-      loaded: (loaded) {
+      loaded: (loaded) async {
         if (audioPlayer.source != null && loaded.currentSong == index) {
           if (loaded.paused) {
             if (audioPlayer.state == PlayerState.completed) {
-              audioPlayer.play(DeviceFileSource(loaded.songs[index].data));
+              await audioPlayer
+                  .play(DeviceFileSource(loaded.songs[index].data));
             } else {
-              audioPlayer.resume();
+              await audioPlayer.resume();
             }
             return;
           } else {
-            audioPlayer.pause();
+            await audioPlayer.pause();
             return;
           }
         }
-        final audio = loaded.songs[index].data;
         loaded.bottomCardController.jumpToPage(index);
-        audioPlayer.play(DeviceFileSource(audio));
         emit(
           loaded.copyWith(
             currentSong: index,
@@ -116,29 +145,78 @@ class HomeCubit extends Cubit<HomeState> {
     );
   }
 
-  void next({bool prev = false}) {
+  void nextButtonClicked() {
     state.mapOrNull(
       loaded: (loaded) async {
-        final nextIndex = loaded.currentSong + (prev ? -1 : 1);
-        if (nextIndex < loaded.songs.length && nextIndex >= 0) {
-          final song = loaded.songs[nextIndex].data;
-          Future.delayed(
-            const Duration(milliseconds: 500),
-            () => audioPlayer.play(DeviceFileSource(song)),
-          );
-          emit(
-            loaded.copyWith(
-              currentSong: nextIndex,
-              paused: false,
-            ),
-          );
+        int newIndex = loaded.currentSong;
+        bool pause = false;
+        RepeatMode repeatMode = loaded.repeatMode;
+        if (loaded.currentSong >= loaded.songs.length - 1) {
+          switch (loaded.repeatMode) {
+            case RepeatMode.noRepeat || RepeatMode.repeatOne:
+              pause = true;
+            case RepeatMode.repeatAll:
+              newIndex = 0;
+          }
+        } else {
+          newIndex++;
+          if (repeatMode == RepeatMode.repeatOne) {
+            repeatMode = RepeatMode.repeatAll;
+          }
         }
+        if (pause) {
+          await audioPlayer.stop();
+        }
+        final song = loaded.songs[newIndex].data;
+        await audioPlayer.play(DeviceFileSource(song));
+        if (pause) {
+          await audioPlayer.pause();
+        }
+
+        if (loaded.bottomCardController.page?.toInt() != newIndex) {
+          loaded.bottomCardController.jumpToPage(newIndex);
+        }
+
+        emit(
+          loaded.copyWith(
+            paused: pause,
+            currentSong: newIndex,
+            repeatMode: repeatMode,
+          ),
+        );
       },
     );
   }
 
-  void setVolume(double volume) {
-    audioPlayer.setVolume(volume);
+  void prevButtonClicked() {
+    state.mapOrNull(
+      loaded: (loaded) async {
+        final newIndex = loaded.currentSong <= 0 ? 0 : loaded.currentSong - 1;
+        final song = loaded.songs[newIndex].data;
+        if (loaded.currentSong == 0) await audioPlayer.seek(Duration.zero);
+        await audioPlayer.play(DeviceFileSource(song));
+        emit(
+          loaded.copyWith(
+            currentSong: newIndex,
+            paused: false,
+          ),
+        );
+      },
+    );
+  }
+
+  void onCompleted() {
+    state.mapOrNull(
+      loaded: (loaded) async {
+        if (loaded.repeatMode == RepeatMode.repeatOne) {
+          await audioPlayer.seek(Duration.zero);
+          await audioPlayer
+              .play(DeviceFileSource(loaded.songs[loaded.currentSong].data));
+        } else {
+          nextButtonClicked();
+        }
+      },
+    );
   }
 
   @override
