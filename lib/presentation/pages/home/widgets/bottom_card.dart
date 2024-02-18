@@ -6,6 +6,7 @@ import 'package:marquee/marquee.dart';
 import 'package:on_audio_query/on_audio_query.dart';
 import 'package:vibel/core/extension.dart';
 import 'package:vibel/presentation/pages/home/cubit/home_cubit.dart';
+import 'package:vibel/presentation/pages/player/widgets/song_position_slider.dart';
 import 'package:vibel/presentation/router/routes.dart';
 import 'package:vibel/presentation/styles/app_dimens.dart';
 import 'package:vibel/presentation/styles/app_spacings.dart';
@@ -40,7 +41,7 @@ class BottomCard extends HookWidget {
       key: const Key('currentAudio'),
       alignment: Alignment.bottomCenter,
       child: SizedBox.fromSize(
-        size: const Size.fromHeight(80),
+        size: const Size.fromHeight(70),
         child: InkWell(
           overlayColor: MaterialStateProperty.all(Colors.transparent),
           onTap: () async {
@@ -59,14 +60,19 @@ class BottomCard extends HookWidget {
             color: context.colors.primary,
             margin: EdgeInsets.zero,
             child: Padding(
-              padding: const EdgeInsets.all(AppSpacings.eight),
+              padding: const EdgeInsets.only(
+                left: AppSpacings.eight,
+                right: AppSpacings.eight,
+                top: AppSpacings.twelve,
+              ),
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   Row(
+                    crossAxisAlignment: CrossAxisAlignment.center,
                     children: [
                       SizedBox.square(
-                        dimension: 60,
+                        dimension: 50,
                         child: QueryArtworkWidget(
                           keepOldArtwork: true,
                           nullArtworkWidget: const Icon(
@@ -81,7 +87,7 @@ class BottomCard extends HookWidget {
                       const SizedBox(width: AppSpacings.twelve),
                       SizedBox(
                         width: 220,
-                        height: 60,
+                        height: 50,
                         child: PageView(
                           onPageChanged: (value) =>
                               cubit.next(prev: currentSong > value),
@@ -138,6 +144,11 @@ class BottomCard extends HookWidget {
                       ),
                     ],
                   ),
+                  const Spacer(),
+                  const Align(
+                    alignment: Alignment.bottomLeft,
+                    child: SongPositionSlider(readOnly: true),
+                  )
                 ],
               ),
             ),

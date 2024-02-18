@@ -6,12 +6,14 @@ import 'package:vibel/presentation/styles/colors/app_colors.dart';
 
 class SongPositionSlider extends HookWidget {
   const SongPositionSlider({
-    required this.duration,
-    required this.position,
+    this.duration = Duration.zero,
+    this.position = Duration.zero,
+    this.readOnly = false,
     super.key,
   });
   final Duration duration;
   final Duration position;
+  final bool readOnly;
   @override
   Widget build(BuildContext context) {
     final cubit = useBloc<SongPositionCubit>();
@@ -26,10 +28,14 @@ class SongPositionSlider extends HookWidget {
     );
     return SliderTheme(
       data: SliderThemeData(
-        trackHeight: 1,
+        overlayShape: SliderComponentShape.noOverlay,
+        trackHeight: 2,
+        thumbShape: readOnly ? SliderComponentShape.noThumb : null,
         thumbColor: context.colors.primary,
         activeTrackColor: context.colors.primary,
         inactiveTrackColor: context.colors.hint,
+        disabledInactiveTrackColor: context.colors.hint.withOpacity(0.3),
+        disabledActiveTrackColor: context.colors.hint.withOpacity(0.7),
       ),
       child: Slider(
         value: state.position?.inMilliseconds.toDouble() ??
@@ -37,9 +43,11 @@ class SongPositionSlider extends HookWidget {
         min: 0,
         max: state.duration?.inMilliseconds.toDouble() ??
             duration.inMilliseconds.toDouble(),
-        onChanged: (value) {
-          cubit.setPosition(Duration(milliseconds: value.toInt()));
-        },
+        onChanged: readOnly
+            ? null
+            : (value) {
+                cubit.setPosition(Duration(milliseconds: value.toInt()));
+              },
       ),
     );
   }
