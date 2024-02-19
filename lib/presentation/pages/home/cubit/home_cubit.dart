@@ -204,8 +204,7 @@ class HomeCubit extends Cubit<HomeState> {
           await _seekAudioUseCase(Duration.zero);
           await _pauseAudioUseCase();
         } else {
-          final song = loaded.songs[newIndex].data;
-          await _playAudioUseCase(song);
+          loaded.bottomCardController.jumpToPage(newIndex);
         }
 
         emit(
