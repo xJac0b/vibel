@@ -39,7 +39,7 @@ class AudioList extends StatelessWidget {
               children: [
                 InkWell(
                   onTap: () {
-                    cubit.playAudio(index);
+                    cubit.clickOnSong(index);
                   },
                   child: ListTile(
                     leading: Stack(

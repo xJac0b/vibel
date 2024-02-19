@@ -1,3 +1,5 @@
+import 'dart:math';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
@@ -105,53 +107,50 @@ class BottomCard extends HookWidget {
                         width: 220,
                         height: 50,
                         child: PageView.builder(
-                            onPageChanged: (value) async {
-                              if (currentSong < value) {
-                                cubit.nextButtonClicked();
-                              } else {
-                                cubit.prevButtonClicked();
-                              }
-                            },
-                            controller: pageController,
-                            scrollDirection: Axis.horizontal,
-                            itemCount: repeatMode == RepeatMode.repeatAll
-                                ? null
-                                : songs.length,
-                            itemBuilder: (context, index) {
-                              index %= songs.length;
-                              return Column(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  SizedBox(
-                                    width: 220,
-                                    height: 30,
-                                    child: hasTextOverflow(
-                                      songs[index].title,
-                                      AppTypography.of(context).body,
-                                      maxWidth: 220,
-                                    )
-                                        ? Marquee(
-                                            blankSpace: AppSpacings.sixtyFour,
-                                            text: songs[index].title,
-                                            style: AppTypography.of(
-                                              context,
-                                            ).body,
-                                          )
-                                        : Text(
-                                            songs[index].title,
-                                            style: AppTypography.of(
-                                              context,
-                                            ).body,
-                                          ),
-                                  ),
-                                  Text(
-                                    songs[index].artistName,
-                                    style: AppTypography.of(context).overline,
-                                  ),
-                                ],
-                              );
-                            },),
+                          onPageChanged: (value) async {
+                            cubit.playAudio(value);
+                          },
+                          controller: pageController,
+                          scrollDirection: Axis.horizontal,
+                          itemCount: repeatMode == RepeatMode.repeatAll
+                              ? null
+                              : songs.length,
+                          itemBuilder: (context, index) {
+                            index %= songs.length;
+                            return Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                SizedBox(
+                                  width: 220,
+                                  height: 30,
+                                  child: hasTextOverflow(
+                                    songs[index].title,
+                                    AppTypography.of(context).body,
+                                    maxWidth: 220,
+                                  )
+                                      ? Marquee(
+                                          blankSpace: AppSpacings.sixtyFour,
+                                          text: songs[index].title,
+                                          style: AppTypography.of(
+                                            context,
+                                          ).body,
+                                        )
+                                      : Text(
+                                          songs[index].title,
+                                          style: AppTypography.of(
+                                            context,
+                                          ).body,
+                                        ),
+                                ),
+                                Text(
+                                  songs[index].artistName,
+                                  style: AppTypography.of(context).overline,
+                                ),
+                              ],
+                            );
+                          },
+                        ),
                       ),
                       const Spacer(),
                       IconButton(
@@ -160,7 +159,7 @@ class BottomCard extends HookWidget {
                           paused ? Icons.play_arrow : Icons.pause,
                         ),
                         onPressed: () {
-                          cubit.playAudio(
+                          cubit.clickOnSong(
                             currentSong,
                           );
                         },

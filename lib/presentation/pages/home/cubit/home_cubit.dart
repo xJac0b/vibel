@@ -84,13 +84,13 @@ class HomeCubit extends Cubit<HomeState> {
           );
         final newIndex =
             sorted.indexWhere((element) => previousPlayingId == element.id);
-        value.bottomCardController.jumpToPage(newIndex);
         emit(
           value.copyWith(
             songs: sorted,
             currentSong: newIndex,
           ),
         );
+        value.bottomCardController.jumpToPage(newIndex);
       },
     );
   }
@@ -117,17 +117,12 @@ class HomeCubit extends Cubit<HomeState> {
     );
   }
 
-  void playAudio(int index) {
+  void clickOnSong(int index) {
     state.mapOrNull(
       loaded: (loaded) async {
         if (audioPlayer.source != null && loaded.currentSong == index) {
           if (loaded.paused) {
-            if (audioPlayer.state == PlayerState.completed) {
-              await audioPlayer
-                  .play(DeviceFileSource(loaded.songs[index].data));
-            } else {
-              await audioPlayer.resume();
-            }
+            await audioPlayer.resume();
             return;
           } else {
             await audioPlayer.pause();
@@ -135,6 +130,16 @@ class HomeCubit extends Cubit<HomeState> {
           }
         }
         loaded.bottomCardController.jumpToPage(index);
+        if (index == loaded.currentSong) playAudio(index);
+      },
+    );
+  }
+
+  void playAudio(int index) {
+    state.mapOrNull(
+      loaded: (loaded) async {
+        final audio = loaded.songs[index].data;
+        await audioPlayer.play(DeviceFileSource(audio));
         emit(
           loaded.copyWith(
             currentSong: index,
