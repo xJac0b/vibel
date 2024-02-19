@@ -15,6 +15,7 @@ import 'package:vibel/domain/audio_player/use_cases/release_audio_use_case.dart'
 import 'package:vibel/domain/audio_player/use_cases/resume_audio_use_case.dart';
 import 'package:vibel/domain/audio_player/use_cases/seek_audio_use_case.dart';
 import 'package:vibel/domain/audio_player/use_cases/stop_audio_use_case.dart';
+import 'package:vibel/presentation/styles/app_dimens.dart';
 
 part 'home_cubit.freezed.dart';
 part 'home_state.dart';
@@ -204,7 +205,11 @@ class HomeCubit extends Cubit<HomeState> {
           await _seekAudioUseCase(Duration.zero);
           await _pauseAudioUseCase();
         } else {
-          loaded.bottomCardController.jumpToPage(newIndex);
+          await loaded.bottomCardController.animateToPage(
+            newIndex,
+            duration: AppDimens.pageViewAnimationDuration,
+            curve: Curves.easeInOut,
+          );
         }
 
         emit(
