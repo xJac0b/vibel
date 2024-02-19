@@ -21,9 +21,6 @@ class MusicPlayerPage extends HookWidget {
     final cubit = useBloc<MusicPlayerCubit>();
     final state = useBlocBuilder(cubit);
 
-    final pageController = usePageController(
-      initialPage: data?.$2 ?? 0,
-    );
     useEffect(
       () {
         if (data != null) {
@@ -81,7 +78,7 @@ class MusicPlayerPage extends HookWidget {
                 return [
                   SongInfo(
                     cubit: cubit,
-                    pageController: pageController,
+                    pageController: loaded.pageController,
                     songs: loaded.songs,
                     currentSong: loaded.currentSong,
                     repeatMode: loaded.repeatMode,

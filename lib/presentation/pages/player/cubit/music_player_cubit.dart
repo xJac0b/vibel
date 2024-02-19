@@ -1,11 +1,13 @@
 import 'dart:async';
 
 import 'package:audioplayers/audioplayers.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
 import 'package:injecteo/injecteo.dart';
 import 'package:on_audio_query/on_audio_query.dart';
 import 'package:vibel/domain/player/repeat_mode.dart';
+import 'package:vibel/presentation/styles/app_dimens.dart';
 
 part 'music_player_cubit.freezed.dart';
 part 'music_player_state.dart';
@@ -53,6 +55,7 @@ class MusicPlayerCubit extends Cubit<MusicPlayerState> {
         position: await audioPlayer.getCurrentPosition() ?? Duration.zero,
         isShuffle: isShuffle,
         repeatMode: repeatMode,
+        pageController: PageController(initialPage: currentSong),
       ),
     );
   }
@@ -61,38 +64,30 @@ class MusicPlayerCubit extends Cubit<MusicPlayerState> {
     state.mapOrNull(
       loaded: (loaded) async {
         int newIndex = loaded.currentSong;
-        bool pause = false;
         RepeatMode repeatMode = loaded.repeatMode;
-        if (loaded.currentSong >= loaded.songs.length - 1) {
-          switch (loaded.repeatMode) {
-            case RepeatMode.noRepeat || RepeatMode.repeatOne:
-              pause = true;
-            case RepeatMode.repeatAll:
-              newIndex = 0;
-          }
+        if (loaded.currentSong >= loaded.songs.length - 1 &&
+            repeatMode == RepeatMode.repeatAll) {
+          newIndex = 0;
         } else {
           newIndex++;
           if (repeatMode == RepeatMode.repeatOne) {
             repeatMode = RepeatMode.repeatAll;
           }
         }
-        if (pause) {
-          await audioPlayer.stop();
-        }
-        final song = loaded.songs[newIndex].data;
-        await audioPlayer.play(DeviceFileSource(song));
-        if (pause) {
+        if (newIndex == loaded.currentSong) {
+          await audioPlayer.seek(Duration.zero);
           await audioPlayer.pause();
+        } else {
+          if (newIndex > 0) {
+            await loaded.pageController.animateToPage(
+              newIndex,
+              duration: AppDimens.pageViewAnimationDuration,
+              curve: Curves.easeIn,
+            );
+          } else {
+            loaded.pageController.jumpToPage(newIndex);
+          }
         }
-        emit(
-          loaded.copyWith(
-            paused: pause,
-            currentSong: newIndex,
-            repeatMode: repeatMode,
-            position: Duration.zero,
-            duration: await audioPlayer.getDuration() ?? Duration.zero,
-          ),
-        );
       },
     );
   }
@@ -101,14 +96,29 @@ class MusicPlayerCubit extends Cubit<MusicPlayerState> {
     state.mapOrNull(
       loaded: (loaded) async {
         final newIndex = loaded.currentSong <= 0 ? 0 : loaded.currentSong - 1;
-        final song = loaded.songs[newIndex].data;
         if (loaded.currentSong == 0) await audioPlayer.seek(Duration.zero);
-        await audioPlayer.play(DeviceFileSource(song));
+        await loaded.pageController.animateToPage(
+          newIndex,
+          duration: AppDimens.pageViewAnimationDuration,
+          curve: Curves.easeIn,
+        );
+      },
+    );
+  }
+
+  void playAudio(int index) {
+    state.mapOrNull(
+      loaded: (loaded) async {
+        final newIndex = index % loaded.songs.length;
+        final audio = loaded.songs[newIndex].data;
+        await audioPlayer.play(DeviceFileSource(audio));
         emit(
           loaded.copyWith(
             currentSong: newIndex,
             position: Duration.zero,
-            paused: false,
+            duration: await audioPlayer.getDuration() ?? Duration.zero,
+            paused: loaded.repeatMode != RepeatMode.repeatAll &&
+                loaded.currentSong == loaded.songs.length - 1,
           ),
         );
       },

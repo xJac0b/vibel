@@ -42,11 +42,7 @@ class SongInfo extends StatelessWidget {
               child: PageView.builder(
                 physics: const BouncingScrollPhysics(),
                 onPageChanged: (value) async {
-                  if (currentSong < value) {
-                    cubit.nextButtonClicked();
-                  } else {
-                    cubit.prevButtonClicked();
-                  }
+                  cubit.playAudio(value);
                 },
                 controller: pageController,
                 scrollDirection: Axis.horizontal,

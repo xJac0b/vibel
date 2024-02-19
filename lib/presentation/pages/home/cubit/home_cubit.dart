@@ -138,11 +138,12 @@ class HomeCubit extends Cubit<HomeState> {
   void playAudio(int index) {
     state.mapOrNull(
       loaded: (loaded) async {
-        final audio = loaded.songs[index].data;
+        final newIndex = index % loaded.songs.length;
+        final audio = loaded.songs[newIndex].data;
         await audioPlayer.play(DeviceFileSource(audio));
         emit(
           loaded.copyWith(
-            currentSong: index,
+            currentSong: newIndex,
             paused: false,
           ),
         );
@@ -150,7 +151,7 @@ class HomeCubit extends Cubit<HomeState> {
     );
   }
 
-  void nextButtonClicked() {
+  void nextSong() {
     state.mapOrNull(
       loaded: (loaded) async {
         int newIndex = loaded.currentSong;
@@ -169,17 +170,12 @@ class HomeCubit extends Cubit<HomeState> {
             repeatMode = RepeatMode.repeatAll;
           }
         }
-        if (pause) {
-          await audioPlayer.stop();
-        }
-        final song = loaded.songs[newIndex].data;
-        await audioPlayer.play(DeviceFileSource(song));
-        if (pause) {
+        if (newIndex == loaded.currentSong) {
+          await audioPlayer.seek(Duration.zero);
           await audioPlayer.pause();
-        }
-
-        if (loaded.bottomCardController.page?.toInt() != newIndex) {
-          loaded.bottomCardController.jumpToPage(newIndex);
+        } else {
+          final song = loaded.songs[newIndex].data;
+          await audioPlayer.play(DeviceFileSource(song));
         }
 
         emit(
@@ -187,23 +183,6 @@ class HomeCubit extends Cubit<HomeState> {
             paused: pause,
             currentSong: newIndex,
             repeatMode: repeatMode,
-          ),
-        );
-      },
-    );
-  }
-
-  void prevButtonClicked() {
-    state.mapOrNull(
-      loaded: (loaded) async {
-        final newIndex = loaded.currentSong <= 0 ? 0 : loaded.currentSong - 1;
-        final song = loaded.songs[newIndex].data;
-        if (loaded.currentSong == 0) await audioPlayer.seek(Duration.zero);
-        await audioPlayer.play(DeviceFileSource(song));
-        emit(
-          loaded.copyWith(
-            currentSong: newIndex,
-            paused: false,
           ),
         );
       },
@@ -218,7 +197,7 @@ class HomeCubit extends Cubit<HomeState> {
           await audioPlayer
               .play(DeviceFileSource(loaded.songs[loaded.currentSong].data));
         } else {
-          nextButtonClicked();
+          nextSong();
         }
       },
     );

@@ -11,6 +11,7 @@ class MusicPlayerState with _$MusicPlayerState {
     required Duration position,
     required bool isShuffle,
     required RepeatMode repeatMode,
+    required PageController pageController,
   }) = _Loaded;
   const factory MusicPlayerState.noPermission() = _NoPermission;
   const factory MusicPlayerState.error() = _Error;
