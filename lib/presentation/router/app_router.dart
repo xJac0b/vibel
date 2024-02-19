@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:injecteo/injecteo.dart';
 import 'package:on_audio_query/on_audio_query.dart';
-import 'package:vibel/domain/player/repeat_mode.dart';
+import 'package:vibel/domain/audio_player/repeat_mode.dart';
 import 'package:vibel/presentation/pages/home/home_page.dart';
 import 'package:vibel/presentation/pages/player/music_player_page.dart';
 import 'package:vibel/presentation/pages/settings/pages/language/language_page.dart';

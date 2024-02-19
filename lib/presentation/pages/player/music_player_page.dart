@@ -3,7 +3,7 @@ import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:go_router/go_router.dart';
 import 'package:hooked_bloc/hooked_bloc.dart';
 import 'package:on_audio_query/on_audio_query.dart';
-import 'package:vibel/domain/player/repeat_mode.dart';
+import 'package:vibel/domain/audio_player/repeat_mode.dart';
 import 'package:vibel/presentation/pages/player/cubit/music_player_cubit.dart';
 import 'package:vibel/presentation/pages/player/widgets/player_controls.dart';
 import 'package:vibel/presentation/pages/player/widgets/song_info.dart';

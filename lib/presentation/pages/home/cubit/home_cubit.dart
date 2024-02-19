@@ -4,23 +4,44 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
 import 'package:injecteo/injecteo.dart';
 import 'package:on_audio_query/on_audio_query.dart';
-import 'package:vibel/domain/player/repeat_mode.dart';
+import 'package:vibel/domain/audio_player/repeat_mode.dart';
+import 'package:vibel/domain/audio_player/use_cases/audio_source_use_case.dart';
+import 'package:vibel/domain/audio_player/use_cases/on_player_complete_use_case.dart';
+import 'package:vibel/domain/audio_player/use_cases/on_player_state_changed_use_case.dart';
+import 'package:vibel/domain/audio_player/use_cases/pause_audio_use_case.dart';
+import 'package:vibel/domain/audio_player/use_cases/play_audio_use_case.dart';
+import 'package:vibel/domain/audio_player/use_cases/player_state_use_case.dart';
+import 'package:vibel/domain/audio_player/use_cases/release_audio_use_case.dart';
+import 'package:vibel/domain/audio_player/use_cases/resume_audio_use_case.dart';
+import 'package:vibel/domain/audio_player/use_cases/seek_audio_use_case.dart';
+import 'package:vibel/domain/audio_player/use_cases/stop_audio_use_case.dart';
 
 part 'home_cubit.freezed.dart';
 part 'home_state.dart';
 
 @inject
 class HomeCubit extends Cubit<HomeState> {
-  HomeCubit(this.audioQuery, this.audioPlayer)
-      : super(const HomeState.initial()) {
-    audioPlayer.onPlayerComplete.listen((event) {
+  HomeCubit(
+    this.audioQuery,
+    this._playAudioUseCase,
+    this._pauseAudioUseCase,
+    this._stopAudioUseCase,
+    this._seekAudioUseCase,
+    this._releaseAudioUseCase,
+    this._onPlayerStateChangedUseCase,
+    this._onPlayerCompleteUseCase,
+    this._resumeAudioUseCase,
+    this._playerState,
+    this._audioSource,
+  ) : super(const HomeState.initial()) {
+    _onPlayerCompleteUseCase().listen((event) {
       state.mapOrNull(
         loaded: (loaded) {
           if (!loaded.musicPlayerOpen) onCompleted();
         },
       );
     });
-    audioPlayer.onPlayerStateChanged.listen((event) {
+    _onPlayerStateChangedUseCase().listen((event) {
       if (event == PlayerState.stopped || event == PlayerState.paused) {
         state.mapOrNull(
           loaded: (value) {
@@ -38,7 +59,16 @@ class HomeCubit extends Cubit<HomeState> {
   }
 
   final OnAudioQuery audioQuery;
-  final AudioPlayer audioPlayer;
+  final PlayAudioUseCase _playAudioUseCase;
+  final PauseAudioUseCase _pauseAudioUseCase;
+  final StopAudioUseCase _stopAudioUseCase;
+  final SeekAudioUseCase _seekAudioUseCase;
+  final ReleaseAudioUseCase _releaseAudioUseCase;
+  final OnPlayerStateChangedUseCase _onPlayerStateChangedUseCase;
+  final OnPlayerCompleteUseCase _onPlayerCompleteUseCase;
+  final ResumeAudioUseCase _resumeAudioUseCase;
+  final PlayerStateUseCase _playerState;
+  final AudioSourceUseCase _audioSource;
 
   Future<void> requestPermission() async {
     await audioQuery.permissionsRequest(retryRequest: true);
@@ -120,12 +150,12 @@ class HomeCubit extends Cubit<HomeState> {
   void clickOnSong(int index) {
     state.mapOrNull(
       loaded: (loaded) async {
-        if (audioPlayer.source != null && loaded.currentSong == index) {
+        if (_audioSource() != null && loaded.currentSong == index) {
           if (loaded.paused) {
-            await audioPlayer.resume();
+            await _resumeAudioUseCase();
             return;
           } else {
-            await audioPlayer.pause();
+            await _pauseAudioUseCase();
             return;
           }
         }
@@ -138,9 +168,9 @@ class HomeCubit extends Cubit<HomeState> {
   void playAudio(int index) {
     state.mapOrNull(
       loaded: (loaded) async {
+        if (loaded.musicPlayerOpen) return;
         final newIndex = index % loaded.songs.length;
-        final audio = loaded.songs[newIndex].data;
-        await audioPlayer.play(DeviceFileSource(audio));
+        await _playAudioUseCase(loaded.songs[newIndex].data);
         emit(
           loaded.copyWith(
             currentSong: newIndex,
@@ -171,11 +201,11 @@ class HomeCubit extends Cubit<HomeState> {
           }
         }
         if (newIndex == loaded.currentSong) {
-          await audioPlayer.seek(Duration.zero);
-          await audioPlayer.pause();
+          await _seekAudioUseCase(Duration.zero);
+          await _pauseAudioUseCase();
         } else {
           final song = loaded.songs[newIndex].data;
-          await audioPlayer.play(DeviceFileSource(song));
+          await _playAudioUseCase(song);
         }
 
         emit(
@@ -193,9 +223,8 @@ class HomeCubit extends Cubit<HomeState> {
     state.mapOrNull(
       loaded: (loaded) async {
         if (loaded.repeatMode == RepeatMode.repeatOne) {
-          await audioPlayer.seek(Duration.zero);
-          await audioPlayer
-              .play(DeviceFileSource(loaded.songs[loaded.currentSong].data));
+          await _seekAudioUseCase(Duration.zero);
+          await _playAudioUseCase(loaded.songs[loaded.currentSong].data);
         } else {
           nextSong();
         }
@@ -205,8 +234,8 @@ class HomeCubit extends Cubit<HomeState> {
 
   @override
   Future<void> close() async {
-    if (audioPlayer.state == PlayerState.playing) await audioPlayer.stop();
-    await audioPlayer.release();
+    if (_playerState() == PlayerState.playing) await _stopAudioUseCase();
+    await _releaseAudioUseCase();
     return super.close();
   }
 }

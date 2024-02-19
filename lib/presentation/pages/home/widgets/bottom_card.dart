@@ -5,7 +5,7 @@ import 'package:go_router/go_router.dart';
 import 'package:marquee/marquee.dart';
 import 'package:on_audio_query/on_audio_query.dart';
 import 'package:vibel/core/extension.dart';
-import 'package:vibel/domain/player/repeat_mode.dart';
+import 'package:vibel/domain/audio_player/repeat_mode.dart';
 import 'package:vibel/presentation/pages/home/cubit/home_cubit.dart';
 import 'package:vibel/presentation/pages/player/widgets/song_position_slider.dart';
 import 'package:vibel/presentation/router/routes.dart';

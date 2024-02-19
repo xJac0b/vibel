@@ -6,7 +6,16 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
 import 'package:injecteo/injecteo.dart';
 import 'package:on_audio_query/on_audio_query.dart';
-import 'package:vibel/domain/player/repeat_mode.dart';
+import 'package:vibel/domain/audio_player/repeat_mode.dart';
+import 'package:vibel/domain/audio_player/use_cases/audio_source_use_case.dart';
+import 'package:vibel/domain/audio_player/use_cases/get_duration_use_case.dart';
+import 'package:vibel/domain/audio_player/use_cases/get_position_use_case.dart';
+import 'package:vibel/domain/audio_player/use_cases/on_player_state_changed_use_case.dart';
+import 'package:vibel/domain/audio_player/use_cases/pause_audio_use_case.dart';
+import 'package:vibel/domain/audio_player/use_cases/play_audio_use_case.dart';
+import 'package:vibel/domain/audio_player/use_cases/player_state_use_case.dart';
+import 'package:vibel/domain/audio_player/use_cases/resume_audio_use_case.dart';
+import 'package:vibel/domain/audio_player/use_cases/seek_audio_use_case.dart';
 import 'package:vibel/presentation/styles/app_dimens.dart';
 
 part 'music_player_cubit.freezed.dart';
@@ -14,9 +23,19 @@ part 'music_player_state.dart';
 
 @inject
 class MusicPlayerCubit extends Cubit<MusicPlayerState> {
-  MusicPlayerCubit(this.audioPlayer, this.audioQuery)
-      : super(const MusicPlayerState.initial()) {
-    _playerStateSubscription = audioPlayer.onPlayerStateChanged.listen((event) {
+  MusicPlayerCubit(
+    this.audioQuery,
+    this._playAudioUseCase,
+    this._pauseAudioUseCase,
+    this._seekAudioUseCase,
+    this._onPlayerStateChangedUseCase,
+    this._resumeAudioUseCase,
+    this._playerState,
+    this._audioSource,
+    this._getDurationUseCase,
+    this._getPositionUseCase,
+  ) : super(const MusicPlayerState.initial()) {
+    _playerStateSubscription = _onPlayerStateChangedUseCase().listen((event) {
       if (event == PlayerState.stopped || event == PlayerState.paused) {
         state.mapOrNull(
           loaded: (value) {
@@ -35,9 +54,17 @@ class MusicPlayerCubit extends Cubit<MusicPlayerState> {
     });
   }
 
-  final AudioPlayer audioPlayer;
   final OnAudioQuery audioQuery;
   StreamSubscription<PlayerState>? _playerStateSubscription;
+  final PlayAudioUseCase _playAudioUseCase;
+  final PauseAudioUseCase _pauseAudioUseCase;
+  final SeekAudioUseCase _seekAudioUseCase;
+  final OnPlayerStateChangedUseCase _onPlayerStateChangedUseCase;
+  final ResumeAudioUseCase _resumeAudioUseCase;
+  final PlayerStateUseCase _playerState;
+  final AudioSourceUseCase _audioSource;
+  final GetDurationUseCase _getDurationUseCase;
+  final GetPositionUseCase _getPositionUseCase;
 
   Future<void> init({
     required List<SongModel> songs,
@@ -51,8 +78,8 @@ class MusicPlayerCubit extends Cubit<MusicPlayerState> {
         songs: songs,
         currentSong: currentSong,
         paused: paused,
-        duration: await audioPlayer.getDuration() ?? Duration.zero,
-        position: await audioPlayer.getCurrentPosition() ?? Duration.zero,
+        duration: await _getDurationUseCase() ?? Duration.zero,
+        position: await _getPositionUseCase() ?? Duration.zero,
         isShuffle: isShuffle,
         repeatMode: repeatMode,
         pageController: PageController(initialPage: currentSong),
@@ -75,8 +102,8 @@ class MusicPlayerCubit extends Cubit<MusicPlayerState> {
           }
         }
         if (newIndex == loaded.currentSong) {
-          await audioPlayer.seek(Duration.zero);
-          await audioPlayer.pause();
+          await _seekAudioUseCase(Duration.zero);
+          await _pauseAudioUseCase();
         } else {
           if (newIndex > 0) {
             await loaded.pageController.animateToPage(
@@ -96,7 +123,7 @@ class MusicPlayerCubit extends Cubit<MusicPlayerState> {
     state.mapOrNull(
       loaded: (loaded) async {
         final newIndex = loaded.currentSong <= 0 ? 0 : loaded.currentSong - 1;
-        if (loaded.currentSong == 0) await audioPlayer.seek(Duration.zero);
+        if (loaded.currentSong == 0) await _seekAudioUseCase(Duration.zero);
         await loaded.pageController.animateToPage(
           newIndex,
           duration: AppDimens.pageViewAnimationDuration,
@@ -110,15 +137,15 @@ class MusicPlayerCubit extends Cubit<MusicPlayerState> {
     state.mapOrNull(
       loaded: (loaded) async {
         final newIndex = index % loaded.songs.length;
-        final audio = loaded.songs[newIndex].data;
-        await audioPlayer.play(DeviceFileSource(audio));
+        await _playAudioUseCase(loaded.songs[newIndex].data);
         emit(
           loaded.copyWith(
             currentSong: newIndex,
             position: Duration.zero,
-            duration: await audioPlayer.getDuration() ?? Duration.zero,
+            duration: await _getDurationUseCase() ?? Duration.zero,
             paused: loaded.repeatMode != RepeatMode.repeatAll &&
-                loaded.currentSong == loaded.songs.length - 1,
+                loaded.currentSong == loaded.songs.length - 1 &&
+                loaded.currentSong == newIndex,
           ),
         );
       },
@@ -128,19 +155,19 @@ class MusicPlayerCubit extends Cubit<MusicPlayerState> {
   void pauseorResume(int index) {
     state.mapOrNull(
       loaded: (loaded) {
-        if (audioPlayer.source == null) {
-          audioPlayer.play(DeviceFileSource(loaded.songs[index].data));
+        if (_audioSource() == null) {
+          _playAudioUseCase(loaded.songs[index].data);
           return;
         }
         if (loaded.paused) {
-          if (audioPlayer.state == PlayerState.completed) {
-            audioPlayer.play(DeviceFileSource(loaded.songs[index].data));
+          if (_playerState() == PlayerState.completed) {
+            _playAudioUseCase(loaded.songs[index].data);
           } else {
-            audioPlayer.resume();
+            _resumeAudioUseCase();
           }
           return;
         } else {
-          audioPlayer.pause();
+          _pauseAudioUseCase();
           return;
         }
       },
@@ -173,16 +200,15 @@ class MusicPlayerCubit extends Cubit<MusicPlayerState> {
   }
 
   Future<Duration?> getDuration() async {
-    return await audioPlayer.getDuration();
+    return await _getDurationUseCase();
   }
 
   void onCompleted() {
     state.mapOrNull(
       loaded: (loaded) async {
         if (loaded.repeatMode == RepeatMode.repeatOne) {
-          await audioPlayer.seek(Duration.zero);
-          await audioPlayer
-              .play(DeviceFileSource(loaded.songs[loaded.currentSong].data));
+          await _seekAudioUseCase(Duration.zero);
+          await _playAudioUseCase(loaded.songs[loaded.currentSong].data);
         } else {
           nextButtonClicked();
         }

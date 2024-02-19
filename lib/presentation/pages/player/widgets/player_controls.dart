@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
-import 'package:vibel/domain/player/repeat_mode.dart';
+import 'package:vibel/domain/audio_player/repeat_mode.dart';
 import 'package:vibel/presentation/pages/player/cubit/music_player_cubit.dart';
 import 'package:vibel/presentation/styles/app_typography.dart';
 import 'package:vibel/presentation/styles/colors/app_colors.dart';
