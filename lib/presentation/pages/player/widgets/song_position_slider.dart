@@ -1,9 +1,12 @@
 import 'dart:math';
 
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:hooked_bloc/hooked_bloc.dart';
+import 'package:vibel/core/extension.dart';
 import 'package:vibel/presentation/pages/player/widgets/cubit/song_position_cubit.dart';
+import 'package:vibel/presentation/styles/app_typography.dart';
 import 'package:vibel/presentation/styles/colors/app_colors.dart';
 
 class SongPositionSlider extends HookWidget {
@@ -39,21 +42,49 @@ class SongPositionSlider extends HookWidget {
         disabledInactiveTrackColor: context.colors.hint.withOpacity(0.3),
         disabledActiveTrackColor: context.colors.hint.withOpacity(0.7),
       ),
-      child: Slider(
-        value: min(
-          state.position?.inMilliseconds.toDouble() ??
-              position.inMilliseconds.toDouble(),
-          state.duration?.inMilliseconds.toDouble() ??
-              duration.inMilliseconds.toDouble(),
-        ),
-        min: 0,
-        max: state.duration?.inMilliseconds.toDouble() ??
-            duration.inMilliseconds.toDouble(),
-        onChanged: readOnly
-            ? null
-            : (value) {
-                cubit.setPosition(Duration(milliseconds: value.toInt()));
+      child: Column(
+        children: [
+          Slider(
+            value: min(
+              state.position?.inMilliseconds.toDouble() ??
+                  position.inMilliseconds.toDouble(),
+              state.duration?.inMilliseconds.toDouble() ??
+                  duration.inMilliseconds.toDouble(),
+            ),
+            min: 0,
+            max: state.duration?.inMilliseconds.toDouble() ??
+                duration.inMilliseconds.toDouble(),
+            onChanged: readOnly
+                ? null
+                : (value) {
+                    cubit.setPosition(Duration(milliseconds: value.toInt()));
+                  },
+          ),
+          if (!readOnly)
+            Builder(
+              builder: (context) {
+                final pos = state.position ?? position;
+                final dur = state.duration ?? duration;
+                return Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      pos.format(),
+                      style: AppTypography.of(context).subtitleSmall.copyWith(
+                            color: context.colors.hint,
+                          ),
+                    ),
+                    Text(
+                      dur.format(),
+                      style: AppTypography.of(context).subtitleSmall.copyWith(
+                            color: context.colors.hint,
+                          ),
+                    ),
+                  ],
+                );
               },
+            )
+        ],
       ),
     );
   }

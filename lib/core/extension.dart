@@ -19,3 +19,9 @@ bool hasTextOverflow(
   )..layout(minWidth: minWidth, maxWidth: maxWidth);
   return textPainter.didExceedMaxLines;
 }
+
+extension DurationX on Duration {
+  String format() {
+    return '$this'.split('.')[0].padLeft(8, '0').replaceFirst('00:', '');
+  }
+}
