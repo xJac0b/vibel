@@ -3,9 +3,9 @@ import 'dart:math';
 
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import 'package:just_audio/just_audio.dart';
 import 'package:on_audio_query/on_audio_query.dart';
 import 'package:vibel/core/extension.dart';
-import 'package:vibel/domain/audio_player/repeat_mode.dart';
 import 'package:vibel/presentation/pages/player/cubit/music_player_cubit.dart';
 import 'package:vibel/presentation/styles/app_dimens.dart';
 import 'package:vibel/presentation/styles/app_spacings.dart';
@@ -17,7 +17,7 @@ class SongInfo extends StatelessWidget {
     required this.pageController,
     required this.songs,
     required this.currentSong,
-    required this.repeatMode,
+    required this.loopMode,
     super.key,
   });
 
@@ -25,7 +25,7 @@ class SongInfo extends StatelessWidget {
   final PageController pageController;
   final List<SongModel> songs;
   final int currentSong;
-  final RepeatMode repeatMode;
+  final LoopMode loopMode;
 
   @override
   Widget build(BuildContext context) {
@@ -46,8 +46,7 @@ class SongInfo extends StatelessWidget {
                 },
                 controller: pageController,
                 scrollDirection: Axis.horizontal,
-                itemCount:
-                    repeatMode == RepeatMode.repeatAll ? null : songs.length,
+                itemCount: loopMode == LoopMode.all ? null : songs.length,
                 itemBuilder: (context, index) {
                   index %= songs.length;
                   return Center(

@@ -1,10 +1,7 @@
-// ignore_for_file: require_trailing_commas
-
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:injecteo/injecteo.dart';
 import 'package:on_audio_query/on_audio_query.dart';
-import 'package:vibel/domain/audio_player/repeat_mode.dart';
 import 'package:vibel/presentation/pages/home/home_page.dart';
 import 'package:vibel/presentation/pages/player/music_player_page.dart';
 import 'package:vibel/presentation/pages/settings/pages/language/language_page.dart';
@@ -52,7 +49,7 @@ class PlayerRoute extends GoRouteData {
   const PlayerRoute();
   @override
   Widget build(BuildContext context, GoRouterState state) {
-    final data = state.extra as (List<SongModel>, int, bool, bool, RepeatMode)?;
+    final data = state.extra as (List<SongModel>, int, bool)?;
     return MusicPlayerPage(data: data);
   }
 }
@@ -72,14 +69,17 @@ class LanguageRoute extends GoRouteData {
       const LanguagePage();
 }
 
-@TypedGoRoute<SettingsRoute>(path: Routes.settings, routes: [
-  TypedGoRoute<ThemeRoute>(
-    path: Routes.theme,
-  ),
-  TypedGoRoute<LanguageRoute>(
-    path: Routes.language,
-  ),
-])
+@TypedGoRoute<SettingsRoute>(
+  path: Routes.settings,
+  routes: [
+    TypedGoRoute<ThemeRoute>(
+      path: Routes.theme,
+    ),
+    TypedGoRoute<LanguageRoute>(
+      path: Routes.language,
+    ),
+  ],
+)
 class SettingsRoute extends GoRouteData {
   const SettingsRoute();
 

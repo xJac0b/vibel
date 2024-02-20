@@ -10,7 +10,7 @@ class MusicPlayerState with _$MusicPlayerState {
     required Duration duration,
     required Duration position,
     required bool isShuffle,
-    required RepeatMode repeatMode,
+    required LoopMode loopMode,
     required PageController pageController,
   }) = _Loaded;
   const factory MusicPlayerState.noPermission() = _NoPermission;

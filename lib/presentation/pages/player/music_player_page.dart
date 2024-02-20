@@ -3,7 +3,6 @@ import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:go_router/go_router.dart';
 import 'package:hooked_bloc/hooked_bloc.dart';
 import 'package:on_audio_query/on_audio_query.dart';
-import 'package:vibel/domain/audio_player/repeat_mode.dart';
 import 'package:vibel/presentation/pages/player/cubit/music_player_cubit.dart';
 import 'package:vibel/presentation/pages/player/widgets/player_controls.dart';
 import 'package:vibel/presentation/pages/player/widgets/song_info.dart';
@@ -14,7 +13,7 @@ import 'package:vibel/presentation/styles/app_spacings.dart';
 
 class MusicPlayerPage extends HookWidget {
   const MusicPlayerPage({this.data, super.key});
-  final (List<SongModel>, int, bool, bool, RepeatMode)? data;
+  final (List<SongModel>, int, bool)? data;
 
   @override
   Widget build(BuildContext context) {
@@ -28,8 +27,6 @@ class MusicPlayerPage extends HookWidget {
             songs: data!.$1,
             currentSong: data!.$2,
             paused: data!.$3,
-            isShuffle: data!.$4,
-            repeatMode: data!.$5,
           );
         }
         return null;
@@ -42,7 +39,7 @@ class MusicPlayerPage extends HookWidget {
         state.mapOrNull(
           loaded: (loaded) {
             context
-                .pop((loaded.currentSong, loaded.isShuffle, loaded.repeatMode));
+                .pop((loaded.currentSong, loaded.isShuffle, loaded.loopMode));
             return true;
           },
         );
@@ -81,7 +78,7 @@ class MusicPlayerPage extends HookWidget {
                     pageController: loaded.pageController,
                     songs: loaded.songs,
                     currentSong: loaded.currentSong,
-                    repeatMode: loaded.repeatMode,
+                    loopMode: loaded.loopMode,
                   ),
                   SliverPadding(
                     padding: const EdgeInsets.symmetric(
@@ -106,7 +103,7 @@ class MusicPlayerPage extends HookWidget {
                             cubit: cubit,
                             paused: loaded.paused,
                             currentSong: loaded.currentSong,
-                            repeatMode: loaded.repeatMode,
+                            loopMode: loaded.loopMode,
                             isShuffle: loaded.isShuffle,
                           ),
                           const SizedBox(height: AppSpacings.sixtyFour),

@@ -7,5 +7,5 @@ class GetPositionUseCase {
 
   final AudioPlayerRepository _audioPlayerRepository;
 
-  Future<Duration?> call() async => await _audioPlayerRepository.getPosition();
+  Duration? call() => _audioPlayerRepository.getPosition();
 }

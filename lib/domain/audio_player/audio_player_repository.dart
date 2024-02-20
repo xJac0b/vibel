@@ -1,18 +1,27 @@
-import 'package:audioplayers/audioplayers.dart';
+import 'package:just_audio/just_audio.dart';
+import 'package:on_audio_query/on_audio_query.dart';
 
 abstract class AudioPlayerRepository {
-  Future<void> play(String path);
+  Future<void> setAudioSource(List<SongModel> songs);
+  Future<void> play();
+  Future<void> seek(Duration position, int? index);
+  Stream<int?> get currentIndexStream;
+  Future<void> seekNext();
+  Future<void> seekPrevious();
+  Future<void> setLoopMode(LoopMode mode);
+  Future<void> setShuffleModeEnabled({required bool enabled});
+  Stream<bool> get shuffleModeEnabledStream;
+  Stream<LoopMode> get loopModeStream;
+  LoopMode get loopMode;
+  bool get shuffleModeEnabled;
   Future<void> pause();
   Future<void> stop();
-  Future<void> seekTo(Duration position);
-  Future<void> resume();
   PlayerState get playerState;
-  Source? get audioSource;
-  Future<Duration?> getDuration();
-  Future<Duration?> getPosition();
-  Stream<Duration> get onDurationChanged;
+  AudioSource? get audioSource;
+  Duration? getDuration();
+  Duration? getPosition();
+  Stream<Duration?> get onDurationChanged;
   Stream<Duration> get onPositionChanged;
   Stream<PlayerState> get onPlayerStateChanged;
-  Stream<void> get onPlayerComplete;
-  Future<void> release();
+  Future<void> dispose();
 }

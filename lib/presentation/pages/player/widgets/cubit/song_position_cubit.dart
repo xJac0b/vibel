@@ -1,40 +1,53 @@
 import 'dart:async';
 
-import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
 import 'package:injecteo/injecteo.dart';
+import 'package:vibel/domain/audio_player/use_cases/get_duration_use_case.dart';
+import 'package:vibel/domain/audio_player/use_cases/get_position_use_case.dart';
+import 'package:vibel/domain/audio_player/use_cases/on_duration_changed_use_case.dart';
+import 'package:vibel/domain/audio_player/use_cases/on_position_changed_use_case.dart';
+import 'package:vibel/domain/audio_player/use_cases/seek_use_case.dart';
 
-part 'song_position_state.dart';
 part 'song_position_cubit.freezed.dart';
+part 'song_position_state.dart';
 
 @inject
 class SongPositionCubit extends Cubit<SongPositionState> {
-  SongPositionCubit(this.audioPlayer)
-      : super(
+  SongPositionCubit(
+    this._getDurationUseCase,
+    this._getPositionUseCase,
+    this._onPositionChangedUseCase,
+    this._onDurationChangedUseCase,
+    this._seekUseCase,
+  ) : super(
           const SongPositionState(
             position: null,
             duration: null,
           ),
         );
 
-  final AudioPlayer audioPlayer;
+  final GetDurationUseCase _getDurationUseCase;
+  final GetPositionUseCase _getPositionUseCase;
+  final OnPositionChangedUseCase _onPositionChangedUseCase;
+  final OnDurationChangedUseCase _onDurationChangedUseCase;
+  final SeekUseCase _seekUseCase;
   StreamSubscription<Duration>? _positionSubscription;
-  StreamSubscription<Duration>? _durationSubscription;
+  StreamSubscription<Duration?>? _durationSubscription;
 
   Future<void> init() async {
     emit(
       SongPositionState(
-        duration: await audioPlayer.getDuration() ?? Duration.zero,
-        position: await audioPlayer.getCurrentPosition() ?? Duration.zero,
+        duration: _getDurationUseCase() ?? Duration.zero,
+        position: _getPositionUseCase() ?? Duration.zero,
       ),
     );
-    _positionSubscription = audioPlayer.onPositionChanged.listen(
+    _positionSubscription = _onPositionChangedUseCase().listen(
       (event) {
         emit(state.copyWith(position: event));
       },
     );
-    _durationSubscription = audioPlayer.onDurationChanged.listen(
+    _durationSubscription = _onDurationChangedUseCase().listen(
       (event) {
         emit(state.copyWith(duration: event));
       },
@@ -49,6 +62,6 @@ class SongPositionCubit extends Cubit<SongPositionState> {
   }
 
   void setPosition(Duration duration) {
-    audioPlayer.seek(duration);
+    _seekUseCase(duration);
   }
 }

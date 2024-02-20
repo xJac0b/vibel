@@ -4,6 +4,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_phoenix/flutter_phoenix.dart';
 import 'package:hooked_bloc/hooked_bloc.dart';
 import 'package:injecteo/injecteo.dart';
+import 'package:just_audio_background/just_audio_background.dart';
 import 'package:logger/logger.dart';
 import 'package:vibel/core/app_bloc_observer.dart';
 import 'package:vibel/core/di/di.dart';
@@ -21,6 +22,12 @@ Future<void> main() async {
     Logger().e(details.exceptionAsString(), stackTrace: details.stack);
   };
   Bloc.observer = const AppBlocObserver();
+
+  await JustAudioBackground.init(
+    androidNotificationChannelId: 'com.ryanheise.bg_demo.channel.audio',
+    androidNotificationChannelName: 'Audio playback',
+    androidNotificationOngoing: true,
+  );
 
   runApp(await _easyLocalization());
 }

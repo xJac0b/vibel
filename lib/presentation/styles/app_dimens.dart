@@ -5,5 +5,6 @@ class AppDimens {
   static const progressIndicatorSize = 24.0;
   static const progressIndicatorStrokeWidth = 2.0;
   static const iconButtonSplashRadius = 20.0;
-  static const pageViewAnimationDuration = Duration(milliseconds: 175);
+  static const fastAnimation = Duration(milliseconds: 175);
+  static const mediumAnimation = Duration(milliseconds: 300);
 }

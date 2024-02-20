@@ -1,5 +1,5 @@
-import 'package:audioplayers/audioplayers.dart';
 import 'package:injecteo/injecteo.dart';
+import 'package:just_audio/just_audio.dart';
 
 @externalModule
 abstract class AudioModule {

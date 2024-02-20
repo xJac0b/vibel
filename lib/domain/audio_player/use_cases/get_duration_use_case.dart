@@ -7,5 +7,5 @@ class GetDurationUseCase {
 
   final AudioPlayerRepository _audioPlayerRepository;
 
-  Future<Duration?> call() async => await _audioPlayerRepository.getDuration();
+  Duration? call() => _audioPlayerRepository.getDuration();
 }

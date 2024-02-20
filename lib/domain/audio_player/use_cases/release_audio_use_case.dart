@@ -7,5 +7,5 @@ class ReleaseAudioUseCase {
 
   final AudioPlayerRepository _audioPlayerRepository;
 
-  Future<void> call() async => await _audioPlayerRepository.release();
+  Future<void> call() async => await _audioPlayerRepository.dispose();
 }

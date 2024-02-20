@@ -1,5 +1,6 @@
-import 'package:audioplayers/audioplayers.dart';
 import 'package:injecteo/injecteo.dart';
+import 'package:just_audio/just_audio.dart';
+import 'package:on_audio_query/on_audio_query.dart';
 import 'package:vibel/data/audio_player/data_sources/audio_player_data_source.dart';
 import 'package:vibel/domain/audio_player/audio_player_repository.dart';
 
@@ -9,8 +10,26 @@ class AudioPlayerRepositoryImpl implements AudioPlayerRepository {
   final AudioPlayerDataSource _audioPlayerDataSource;
 
   @override
-  Future<void> play(String path) async =>
-      await _audioPlayerDataSource.play(path);
+  Future<void> setAudioSource(List<SongModel> songs) =>
+      _audioPlayerDataSource.setAudioSource(songs);
+
+  @override
+  Future<void> play() async => await _audioPlayerDataSource.play();
+
+  @override
+  Future<void> seek(Duration position, int? index) async =>
+      await _audioPlayerDataSource.seek(position, index);
+
+  @override
+  Stream<int?> get currentIndexStream =>
+      _audioPlayerDataSource.currentIndexStream;
+
+  @override
+  Stream<bool> get shuffleModeEnabledStream =>
+      _audioPlayerDataSource.shuffleModeEnabledStream;
+
+  @override
+  Stream<LoopMode> get loopModeStream => _audioPlayerDataSource.loopModeStream;
 
   @override
   Future<void> pause() async => await _audioPlayerDataSource.pause();
@@ -19,38 +38,48 @@ class AudioPlayerRepositoryImpl implements AudioPlayerRepository {
   Future<void> stop() async => await _audioPlayerDataSource.stop();
 
   @override
-  Future<void> seekTo(Duration position) async =>
-      await _audioPlayerDataSource.seekTo(position);
+  Future<void> seekNext() => _audioPlayerDataSource.seekNext();
+  @override
+  Future<void> seekPrevious() => _audioPlayerDataSource.seekPrevious();
 
   @override
-  Future<void> resume() async => await _audioPlayerDataSource.resume();
+  Future<void> setLoopMode(LoopMode mode) =>
+      _audioPlayerDataSource.setLoopMode(mode);
+
+  @override
+  Future<void> setShuffleModeEnabled({required bool enabled}) =>
+      _audioPlayerDataSource.setShuffleModeEnabled(enabled: enabled);
+
+  @override
+  LoopMode get loopMode => _audioPlayerDataSource.loopMode;
+
+  @override
+  bool get shuffleModeEnabled => _audioPlayerDataSource.shuffleModeEnabled;
 
   @override
   PlayerState get playerState => _audioPlayerDataSource.playerState;
 
   @override
-  Source? get audioSource => _audioPlayerDataSource.audioSource;
+  AudioSource? get audioSource => _audioPlayerDataSource.audioSource;
 
   @override
-  Stream<Duration> get onDurationChanged =>
+  Stream<Duration?> get onDurationChanged =>
       _audioPlayerDataSource.onDurationChanged;
 
   @override
-  Stream<Duration> get onPositionChanged => throw UnimplementedError();
+  Stream<Duration> get onPositionChanged =>
+      _audioPlayerDataSource.onPositionChanged;
 
   @override
-  Future<void> release() async => await _audioPlayerDataSource.release();
-
-  @override
-  Stream<void> get onPlayerComplete => _audioPlayerDataSource.onPlayerComplete;
+  Future<void> dispose() async => await _audioPlayerDataSource.dispose();
 
   @override
   Stream<PlayerState> get onPlayerStateChanged =>
       _audioPlayerDataSource.onPlayerStateChanged;
 
   @override
-  Future<Duration?> getDuration() => _audioPlayerDataSource.getDuration();
+  Duration? getDuration() => _audioPlayerDataSource.getDuration();
 
   @override
-  Future<Duration?> getPosition() => _audioPlayerDataSource.getPosition();
+  Duration? getPosition() => _audioPlayerDataSource.getPosition();
 }

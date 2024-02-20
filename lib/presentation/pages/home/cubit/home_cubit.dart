@@ -1,19 +1,19 @@
-import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
 import 'package:injecteo/injecteo.dart';
+import 'package:just_audio/just_audio.dart';
 import 'package:on_audio_query/on_audio_query.dart';
-import 'package:vibel/domain/audio_player/repeat_mode.dart';
-import 'package:vibel/domain/audio_player/use_cases/audio_source_use_case.dart';
-import 'package:vibel/domain/audio_player/use_cases/on_player_complete_use_case.dart';
+import 'package:vibel/domain/audio_player/use_cases/get_player_state_use_case.dart';
+import 'package:vibel/domain/audio_player/use_cases/on_current_index_changed_use_case.dart';
+import 'package:vibel/domain/audio_player/use_cases/on_loop_mode_changed_use_case.dart';
 import 'package:vibel/domain/audio_player/use_cases/on_player_state_changed_use_case.dart';
+import 'package:vibel/domain/audio_player/use_cases/on_shuffle_mode_changed_use_case.dart';
 import 'package:vibel/domain/audio_player/use_cases/pause_audio_use_case.dart';
 import 'package:vibel/domain/audio_player/use_cases/play_audio_use_case.dart';
-import 'package:vibel/domain/audio_player/use_cases/player_state_use_case.dart';
 import 'package:vibel/domain/audio_player/use_cases/release_audio_use_case.dart';
-import 'package:vibel/domain/audio_player/use_cases/resume_audio_use_case.dart';
-import 'package:vibel/domain/audio_player/use_cases/seek_audio_use_case.dart';
+import 'package:vibel/domain/audio_player/use_cases/seek_use_case.dart';
+import 'package:vibel/domain/audio_player/use_cases/set_audio_source_use_case.dart';
 import 'package:vibel/domain/audio_player/use_cases/stop_audio_use_case.dart';
 import 'package:vibel/presentation/styles/app_dimens.dart';
 
@@ -27,35 +27,55 @@ class HomeCubit extends Cubit<HomeState> {
     this._playAudioUseCase,
     this._pauseAudioUseCase,
     this._stopAudioUseCase,
-    this._seekAudioUseCase,
+    this._seekUseCase,
     this._releaseAudioUseCase,
     this._onPlayerStateChangedUseCase,
-    this._onPlayerCompleteUseCase,
-    this._resumeAudioUseCase,
+    this._setAudioSourceUseCase,
     this._playerState,
-    this._audioSource,
+    this._onCurrentIndexChangedUseCase,
+    this._onShuffleModeChangedUseCase,
+    this._onLoopModeChangedUseCase,
   ) : super(const HomeState.initial()) {
-    _onPlayerCompleteUseCase().listen((event) {
+    _onCurrentIndexChangedUseCase().listen((event) {
       state.mapOrNull(
         loaded: (loaded) {
-          if (!loaded.musicPlayerOpen) onCompleted();
+          emit(loaded.copyWith(currentSong: event));
+          if (event != null) {
+            if (loaded.currentSong == null ||
+                (loaded.currentSong != null &&
+                    (loaded.currentSong! - event).abs() > 1)) {
+              loaded.bottomCardController.jumpToPage(event);
+            } else {
+              loaded.bottomCardController.animateToPage(
+                event,
+                duration: AppDimens.fastAnimation,
+                curve: Curves.easeInOut,
+              );
+            }
+          }
         },
       );
     });
     _onPlayerStateChangedUseCase().listen((event) {
-      if (event == PlayerState.stopped || event == PlayerState.paused) {
-        state.mapOrNull(
-          loaded: (value) {
-            emit(value.copyWith(paused: true));
-          },
-        );
-      } else if (event == PlayerState.playing) {
-        state.mapOrNull(
-          loaded: (value) {
-            emit(value.copyWith(paused: false));
-          },
-        );
-      }
+      state.mapOrNull(
+        loaded: (value) {
+          emit(value.copyWith(paused: !event.playing));
+        },
+      );
+    });
+    _onShuffleModeChangedUseCase().listen((event) {
+      state.mapOrNull(
+        loaded: (value) {
+          emit(value.copyWith(isShuffle: event));
+        },
+      );
+    });
+    _onLoopModeChangedUseCase().listen((event) {
+      state.mapOrNull(
+        loaded: (value) {
+          emit(value.copyWith(loopMode: event));
+        },
+      );
     });
   }
 
@@ -63,13 +83,14 @@ class HomeCubit extends Cubit<HomeState> {
   final PlayAudioUseCase _playAudioUseCase;
   final PauseAudioUseCase _pauseAudioUseCase;
   final StopAudioUseCase _stopAudioUseCase;
-  final SeekAudioUseCase _seekAudioUseCase;
+  final SeekUseCase _seekUseCase;
   final ReleaseAudioUseCase _releaseAudioUseCase;
   final OnPlayerStateChangedUseCase _onPlayerStateChangedUseCase;
-  final OnPlayerCompleteUseCase _onPlayerCompleteUseCase;
-  final ResumeAudioUseCase _resumeAudioUseCase;
-  final PlayerStateUseCase _playerState;
-  final AudioSourceUseCase _audioSource;
+  final SetAudioSourceUseCase _setAudioSourceUseCase;
+  final GetPlayerStateUseCase _playerState;
+  final OnCurrentIndexChangedUseCase _onCurrentIndexChangedUseCase;
+  final OnShuffleModeChangedUseCase _onShuffleModeChangedUseCase;
+  final OnLoopModeChangedUseCase _onLoopModeChangedUseCase;
 
   Future<void> requestPermission() async {
     await audioQuery.permissionsRequest(retryRequest: true);
@@ -82,14 +103,15 @@ class HomeCubit extends Cubit<HomeState> {
       return;
     }
     final audios = await audioQuery.querySongs();
+    await _setAudioSourceUseCase(audios);
     emit(
       HomeState.loaded(
         songs: audios,
-        currentSong: 0,
+        currentSong: null,
         paused: true,
         bottomCardController: PageController(initialPage: 0),
         isShuffle: false,
-        repeatMode: RepeatMode.noRepeat,
+        loopMode: LoopMode.off,
         musicPlayerOpen: false,
       ),
     );
@@ -103,44 +125,36 @@ class HomeCubit extends Cubit<HomeState> {
     );
   }
 
+  // TODO(xJac0b): probably call use case to change source.
   void sortAlphabetically({bool reverse = false}) {
-    state.mapOrNull(
-      loaded: (value) {
-        final previousPlayingId = value.songs[value.currentSong].id;
-        final sorted = value.songs.toList()
-          ..sort(
-            (a, b) => reverse
-                ? b.title.toLowerCase().compareTo(a.title.toLowerCase())
-                : a.title.toLowerCase().compareTo(b.title.toLowerCase()),
-          );
-        final newIndex =
-            sorted.indexWhere((element) => previousPlayingId == element.id);
-        emit(
-          value.copyWith(
-            songs: sorted,
-            currentSong: newIndex,
-          ),
-        );
-        value.bottomCardController.jumpToPage(newIndex);
-      },
-    );
+    throw UnimplementedError();
+    // state.mapOrNull(
+    //   loaded: (value) {
+    //     final previousPlayingId = value.songs[value.currentSong].id;
+    //     final sorted = value.songs.toList()
+    //       ..sort(
+    //         (a, b) => reverse
+    //             ? b.title.toLowerCase().compareTo(a.title.toLowerCase())
+    //             : a.title.toLowerCase().compareTo(b.title.toLowerCase()),
+    //       );
+    //     final newIndex =
+    //         sorted.indexWhere((element) => previousPlayingId == element.id);
+    //     emit(
+    //       value.copyWith(
+    //         songs: sorted,
+    //         currentSong: newIndex,
+    //       ),
+    //     );
+    //     value.bottomCardController.jumpToPage(newIndex);
+    //   },
+    // );
   }
 
-  void updateAfterPlayerClosing({
-    required int index,
-    required bool isShuffle,
-    required RepeatMode repeatMode,
-  }) {
+  void updateAfterPlayerClosing() {
     state.mapOrNull(
       loaded: (value) {
-        if (value.bottomCardController.page?.toInt() != index) {
-          value.bottomCardController.jumpToPage(index);
-        }
         emit(
           value.copyWith(
-            currentSong: index,
-            isShuffle: isShuffle,
-            repeatMode: repeatMode,
             musicPlayerOpen: false,
           ),
         );
@@ -151,17 +165,19 @@ class HomeCubit extends Cubit<HomeState> {
   void clickOnSong(int index) {
     state.mapOrNull(
       loaded: (loaded) async {
-        if (_audioSource() != null && loaded.currentSong == index) {
-          if (loaded.paused) {
-            await _resumeAudioUseCase();
-            return;
-          } else {
-            await _pauseAudioUseCase();
-            return;
-          }
+        if (loaded.currentSong == null) {
+          emit(loaded.copyWith(currentSong: index));
         }
-        loaded.bottomCardController.jumpToPage(index);
-        if (index == loaded.currentSong) playAudio(index);
+        if (loaded.currentSong == index) {
+          if (_playerState().playing) {
+            await _pauseAudioUseCase();
+          } else {
+            await _playAudioUseCase();
+          }
+        } else {
+          await _seekUseCase(Duration.zero, index);
+          await _playAudioUseCase();
+        }
       },
     );
   }
@@ -169,76 +185,16 @@ class HomeCubit extends Cubit<HomeState> {
   void playAudio(int index) {
     state.mapOrNull(
       loaded: (loaded) async {
-        if (loaded.musicPlayerOpen) return;
+        if (loaded.musicPlayerOpen || loaded.currentSong == index) return;
         final newIndex = index % loaded.songs.length;
-        await _playAudioUseCase(loaded.songs[newIndex].data);
-        emit(
-          loaded.copyWith(
-            currentSong: newIndex,
-            paused: false,
-          ),
-        );
-      },
-    );
-  }
-
-  void nextSong() {
-    state.mapOrNull(
-      loaded: (loaded) async {
-        int newIndex = loaded.currentSong;
-        bool pause = false;
-        RepeatMode repeatMode = loaded.repeatMode;
-        if (loaded.currentSong >= loaded.songs.length - 1) {
-          switch (loaded.repeatMode) {
-            case RepeatMode.noRepeat || RepeatMode.repeatOne:
-              pause = true;
-            case RepeatMode.repeatAll:
-              newIndex = 0;
-          }
-        } else {
-          newIndex++;
-          if (repeatMode == RepeatMode.repeatOne) {
-            repeatMode = RepeatMode.repeatAll;
-          }
-        }
-        if (newIndex == loaded.currentSong) {
-          await _seekAudioUseCase(Duration.zero);
-          await _pauseAudioUseCase();
-        } else {
-          await loaded.bottomCardController.animateToPage(
-            newIndex,
-            duration: AppDimens.pageViewAnimationDuration,
-            curve: Curves.easeInOut,
-          );
-        }
-
-        emit(
-          loaded.copyWith(
-            paused: pause,
-            currentSong: newIndex,
-            repeatMode: repeatMode,
-          ),
-        );
-      },
-    );
-  }
-
-  void onCompleted() {
-    state.mapOrNull(
-      loaded: (loaded) async {
-        if (loaded.repeatMode == RepeatMode.repeatOne) {
-          await _seekAudioUseCase(Duration.zero);
-          await _playAudioUseCase(loaded.songs[loaded.currentSong].data);
-        } else {
-          nextSong();
-        }
+        await _seekUseCase(Duration.zero, newIndex);
       },
     );
   }
 
   @override
   Future<void> close() async {
-    if (_playerState() == PlayerState.playing) await _stopAudioUseCase();
+    if (_playerState().playing) await _stopAudioUseCase();
     await _releaseAudioUseCase();
     return super.close();
   }

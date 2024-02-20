@@ -7,6 +7,5 @@ class PlayAudioUseCase {
 
   final AudioPlayerRepository _audioPlayerRepository;
 
-  Future<void> call(String path) async =>
-      await _audioPlayerRepository.play(path);
+  Future<void> call() async => await _audioPlayerRepository.play();
 }

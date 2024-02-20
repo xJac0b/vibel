@@ -20,7 +20,7 @@ class AudioList extends StatelessWidget {
   final List<SongModel> audios;
   final String searchBarText;
   final HomeCubit cubit;
-  final int currentSong;
+  final int? currentSong;
   final bool paused;
 
   @override

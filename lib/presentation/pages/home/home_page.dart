@@ -60,16 +60,14 @@ class HomePage extends HookWidget {
             ),
             state.mapOrNull(
                   loaded: (loaded) {
-                    final song = loaded.songs[loaded.currentSong];
                     return BottomCard(
                       cubit: cubit,
-                      song: song,
                       paused: loaded.paused,
                       currentSong: loaded.currentSong,
                       songs: loaded.songs,
                       pageController: loaded.bottomCardController,
                       isShuffle: loaded.isShuffle,
-                      repeatMode: loaded.repeatMode,
+                      loopMode: loaded.loopMode,
                     );
                   },
                 ) ??

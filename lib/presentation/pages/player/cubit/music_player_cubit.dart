@@ -1,21 +1,28 @@
 import 'dart:async';
 
-import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
 import 'package:injecteo/injecteo.dart';
+import 'package:just_audio/just_audio.dart';
 import 'package:on_audio_query/on_audio_query.dart';
-import 'package:vibel/domain/audio_player/repeat_mode.dart';
-import 'package:vibel/domain/audio_player/use_cases/audio_source_use_case.dart';
+import 'package:vibel/domain/audio_player/loop_mode_x.dart';
 import 'package:vibel/domain/audio_player/use_cases/get_duration_use_case.dart';
+import 'package:vibel/domain/audio_player/use_cases/get_loop_mode_use_case.dart';
+import 'package:vibel/domain/audio_player/use_cases/get_player_state_use_case.dart';
 import 'package:vibel/domain/audio_player/use_cases/get_position_use_case.dart';
+import 'package:vibel/domain/audio_player/use_cases/get_shuffle_mode_enabled_use_case.dart';
+import 'package:vibel/domain/audio_player/use_cases/on_current_index_changed_use_case.dart';
+import 'package:vibel/domain/audio_player/use_cases/on_loop_mode_changed_use_case.dart';
 import 'package:vibel/domain/audio_player/use_cases/on_player_state_changed_use_case.dart';
+import 'package:vibel/domain/audio_player/use_cases/on_shuffle_mode_changed_use_case.dart';
 import 'package:vibel/domain/audio_player/use_cases/pause_audio_use_case.dart';
 import 'package:vibel/domain/audio_player/use_cases/play_audio_use_case.dart';
-import 'package:vibel/domain/audio_player/use_cases/player_state_use_case.dart';
-import 'package:vibel/domain/audio_player/use_cases/resume_audio_use_case.dart';
-import 'package:vibel/domain/audio_player/use_cases/seek_audio_use_case.dart';
+import 'package:vibel/domain/audio_player/use_cases/seek_next_use_case.dart';
+import 'package:vibel/domain/audio_player/use_cases/seek_previous_use_case.dart';
+import 'package:vibel/domain/audio_player/use_cases/seek_use_case.dart';
+import 'package:vibel/domain/audio_player/use_cases/set_loop_mode_use_case.dart';
+import 'package:vibel/domain/audio_player/use_cases/set_shuffle_mode_enabled_use_case.dart';
 import 'package:vibel/presentation/styles/app_dimens.dart';
 
 part 'music_player_cubit.freezed.dart';
@@ -27,108 +34,115 @@ class MusicPlayerCubit extends Cubit<MusicPlayerState> {
     this.audioQuery,
     this._playAudioUseCase,
     this._pauseAudioUseCase,
-    this._seekAudioUseCase,
     this._onPlayerStateChangedUseCase,
-    this._resumeAudioUseCase,
     this._playerState,
-    this._audioSource,
     this._getDurationUseCase,
     this._getPositionUseCase,
+    this._getShuffleModeEnabledUseCase,
+    this._getLoopModeUseCase,
+    this._onCurrentIndexChangedUseCase,
+    this._seekNextUseCase,
+    this._seekPreviousUseCase,
+    this._onShuffleModeChangedUseCase,
+    this._onLoopModeChangedUseCase,
+    this._seekUseCase,
+    this._setShuffleModeEnabledUseCase,
+    this._setLoopModeUseCase,
   ) : super(const MusicPlayerState.initial()) {
+    _indexStreamSubscription = _onCurrentIndexChangedUseCase().listen((event) {
+      state.mapOrNull(
+        loaded: (loaded) {
+          if (event == null) {
+            emit(const MusicPlayerState.error());
+          } else {
+            emit(loaded.copyWith(currentSong: event));
+            if (loaded.pageController.hasClients) {
+              loaded.pageController.animateToPage(
+                event,
+                duration: AppDimens.mediumAnimation,
+                curve: Curves.easeInOut,
+              );
+            }
+          }
+        },
+      );
+    });
     _playerStateSubscription = _onPlayerStateChangedUseCase().listen((event) {
-      if (event == PlayerState.stopped || event == PlayerState.paused) {
-        state.mapOrNull(
-          loaded: (value) {
-            emit(value.copyWith(paused: true));
-          },
-        );
-      } else if (event == PlayerState.completed) {
-        onCompleted();
-      } else if (event == PlayerState.playing) {
-        state.mapOrNull(
-          loaded: (value) {
-            emit(value.copyWith(paused: false));
-          },
-        );
-      }
+      state.mapOrNull(
+        loaded: (value) {
+          emit(value.copyWith(paused: !event.playing));
+        },
+      );
+    });
+    _shuffleModeSubscription = _onShuffleModeChangedUseCase().listen((event) {
+      state.mapOrNull(
+        loaded: (value) {
+          emit(value.copyWith(isShuffle: event));
+        },
+      );
+    });
+    _loopModeSubscription = _onLoopModeChangedUseCase().listen((event) {
+      state.mapOrNull(
+        loaded: (value) {
+          emit(value.copyWith(loopMode: event));
+        },
+      );
     });
   }
 
   final OnAudioQuery audioQuery;
+  StreamSubscription<int?>? _indexStreamSubscription;
   StreamSubscription<PlayerState>? _playerStateSubscription;
+  StreamSubscription<bool>? _shuffleModeSubscription;
+  StreamSubscription<LoopMode>? _loopModeSubscription;
   final PlayAudioUseCase _playAudioUseCase;
   final PauseAudioUseCase _pauseAudioUseCase;
-  final SeekAudioUseCase _seekAudioUseCase;
   final OnPlayerStateChangedUseCase _onPlayerStateChangedUseCase;
-  final ResumeAudioUseCase _resumeAudioUseCase;
-  final PlayerStateUseCase _playerState;
-  final AudioSourceUseCase _audioSource;
+  final GetPlayerStateUseCase _playerState;
   final GetDurationUseCase _getDurationUseCase;
   final GetPositionUseCase _getPositionUseCase;
+  final GetShuffleModeEnabledUseCase _getShuffleModeEnabledUseCase;
+  final GetLoopModeUseCase _getLoopModeUseCase;
+  final OnCurrentIndexChangedUseCase _onCurrentIndexChangedUseCase;
+  final SeekNextUseCase _seekNextUseCase;
+  final SeekPreviousUseCase _seekPreviousUseCase;
+  final OnShuffleModeChangedUseCase _onShuffleModeChangedUseCase;
+  final OnLoopModeChangedUseCase _onLoopModeChangedUseCase;
+  final SeekUseCase _seekUseCase;
+  final SetShuffleModeEnabledUseCase _setShuffleModeEnabledUseCase;
+  final SetLoopModeUseCase _setLoopModeUseCase;
 
   Future<void> init({
     required List<SongModel> songs,
     required int currentSong,
     required bool paused,
-    required bool isShuffle,
-    required RepeatMode repeatMode,
   }) async {
     emit(
       MusicPlayerState.loaded(
         songs: songs,
         currentSong: currentSong,
         paused: paused,
-        duration: await _getDurationUseCase() ?? Duration.zero,
-        position: await _getPositionUseCase() ?? Duration.zero,
-        isShuffle: isShuffle,
-        repeatMode: repeatMode,
+        duration: _getDurationUseCase() ?? Duration.zero,
+        position: _getPositionUseCase() ?? Duration.zero,
+        isShuffle: _getShuffleModeEnabledUseCase(),
+        loopMode: _getLoopModeUseCase(),
         pageController: PageController(initialPage: currentSong),
       ),
     );
   }
 
-  void nextButtonClicked() {
+  void nextButtonClicked() => _seekNextUseCase();
+
+  void prevButtonClicked() => _seekPreviousUseCase();
+
+  void pauseorResume(int index) {
     state.mapOrNull(
       loaded: (loaded) async {
-        int newIndex = loaded.currentSong;
-        RepeatMode repeatMode = loaded.repeatMode;
-        if (loaded.currentSong >= loaded.songs.length - 1 &&
-            repeatMode == RepeatMode.repeatAll) {
-          newIndex = 0;
-        } else {
-          newIndex++;
-          if (repeatMode == RepeatMode.repeatOne) {
-            repeatMode = RepeatMode.repeatAll;
-          }
-        }
-        if (newIndex == loaded.currentSong) {
-          await _seekAudioUseCase(Duration.zero);
+        if (_playerState().playing) {
           await _pauseAudioUseCase();
         } else {
-          if (newIndex > 0) {
-            await loaded.pageController.animateToPage(
-              newIndex,
-              duration: AppDimens.pageViewAnimationDuration,
-              curve: Curves.easeIn,
-            );
-          } else {
-            loaded.pageController.jumpToPage(newIndex);
-          }
+          await _playAudioUseCase();
         }
-      },
-    );
-  }
-
-  void prevButtonClicked() {
-    state.mapOrNull(
-      loaded: (loaded) async {
-        final newIndex = loaded.currentSong <= 0 ? 0 : loaded.currentSong - 1;
-        if (loaded.currentSong == 0) await _seekAudioUseCase(Duration.zero);
-        await loaded.pageController.animateToPage(
-          newIndex,
-          duration: AppDimens.pageViewAnimationDuration,
-          curve: Curves.easeIn,
-        );
       },
     );
   }
@@ -136,89 +150,36 @@ class MusicPlayerCubit extends Cubit<MusicPlayerState> {
   void playAudio(int index) {
     state.mapOrNull(
       loaded: (loaded) async {
+        if (loaded.currentSong == index) return;
         final newIndex = index % loaded.songs.length;
-        await _playAudioUseCase(loaded.songs[newIndex].data);
-        emit(
-          loaded.copyWith(
-            currentSong: newIndex,
-            position: Duration.zero,
-            duration: await _getDurationUseCase() ?? Duration.zero,
-            paused: loaded.repeatMode != RepeatMode.repeatAll &&
-                loaded.currentSong == loaded.songs.length - 1 &&
-                loaded.currentSong == newIndex,
-          ),
-        );
-      },
-    );
-  }
-
-  void pauseorResume(int index) {
-    state.mapOrNull(
-      loaded: (loaded) {
-        if (_audioSource() == null) {
-          _playAudioUseCase(loaded.songs[index].data);
-          return;
-        }
-        if (loaded.paused) {
-          if (_playerState() == PlayerState.completed) {
-            _playAudioUseCase(loaded.songs[index].data);
-          } else {
-            _resumeAudioUseCase();
-          }
-          return;
-        } else {
-          _pauseAudioUseCase();
-          return;
-        }
+        await _seekUseCase(Duration.zero, newIndex);
       },
     );
   }
 
   void shuffle() {
     state.mapOrNull(
-      loaded: (loaded) {
-        emit(
-          loaded.copyWith(
-            isShuffle: !loaded.isShuffle,
-          ),
-        );
-      },
+      loaded: (loaded) async =>
+          _setShuffleModeEnabledUseCase(enabled: !loaded.isShuffle),
     );
   }
 
-  void repeat() {
+  void loop() {
     state.mapOrNull(
-      loaded: (loaded) {
-        final temp = loaded.repeatMode.next();
-        emit(
-          loaded.copyWith(
-            repeatMode: temp,
-          ),
-        );
-      },
+      loaded: (loaded) => _setLoopModeUseCase(loaded.loopMode.next()),
     );
   }
 
   Future<Duration?> getDuration() async {
-    return await _getDurationUseCase();
-  }
-
-  void onCompleted() {
-    state.mapOrNull(
-      loaded: (loaded) async {
-        if (loaded.repeatMode == RepeatMode.repeatOne) {
-          await _seekAudioUseCase(Duration.zero);
-          await _playAudioUseCase(loaded.songs[loaded.currentSong].data);
-        } else {
-          nextButtonClicked();
-        }
-      },
-    );
+    return _getDurationUseCase();
   }
 
   @override
   Future<void> close() async {
     await _playerStateSubscription?.cancel();
+    await _indexStreamSubscription?.cancel();
+    await _shuffleModeSubscription?.cancel();
+    await _loopModeSubscription?.cancel();
     return super.close();
   }
 }

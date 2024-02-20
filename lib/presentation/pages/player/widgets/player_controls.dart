@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
-import 'package:vibel/domain/audio_player/repeat_mode.dart';
+import 'package:just_audio/just_audio.dart';
 import 'package:vibel/presentation/pages/player/cubit/music_player_cubit.dart';
 import 'package:vibel/presentation/styles/app_typography.dart';
 import 'package:vibel/presentation/styles/colors/app_colors.dart';
@@ -10,7 +10,7 @@ class PlayerControls extends StatelessWidget {
     required this.cubit,
     required this.paused,
     required this.currentSong,
-    required this.repeatMode,
+    required this.loopMode,
     required this.isShuffle,
     super.key,
   });
@@ -18,7 +18,7 @@ class PlayerControls extends StatelessWidget {
   final MusicPlayerCubit cubit;
   final bool paused;
   final int currentSong;
-  final RepeatMode repeatMode;
+  final LoopMode loopMode;
   final bool isShuffle;
 
   @override
@@ -63,16 +63,16 @@ class PlayerControls extends StatelessWidget {
               alignment: Alignment.bottomRight,
               icon: Icon(
                 FontAwesomeIcons.repeat,
-                color: switch (repeatMode) {
-                  RepeatMode.noRepeat => context.colors.hint,
-                  RepeatMode.repeatAll => context.colors.primary,
-                  RepeatMode.repeatOne => context.colors.primary,
+                color: switch (loopMode) {
+                  LoopMode.off => context.colors.hint,
+                  LoopMode.all => context.colors.primary,
+                  LoopMode.one => context.colors.primary,
                 },
                 size: 20,
               ),
-              onPressed: () => cubit.repeat(),
+              onPressed: () => cubit.loop(),
             ),
-            if (repeatMode == RepeatMode.repeatOne)
+            if (loopMode == LoopMode.one)
               Positioned(
                 left: 5,
                 bottom: 0,
