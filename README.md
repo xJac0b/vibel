@@ -18,9 +18,12 @@ Vibel is a lightweight and simple music listening app developed using Flutter. I
 -   on_audio_query: A Flutter plugin for querying information about audio files.
   
 #### Screenshots 📷
-![Splash Page](splash_page.png)
-![Home Page](home_page.png)
-![Player Page](player_page.png)
+
+<p float="left">
+<img src="splash_page.png" width="300">
+<img src="home_page.png" width="300">
+<img src="player_page.png" width="300">
+</p>
 
 
 #### Contributions 🤝
