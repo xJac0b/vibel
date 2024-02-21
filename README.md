@@ -23,7 +23,6 @@ Vibel is a lightweight and simple music listening app developed using Flutter. I
 <img src="assets/images/splash_page.png" width="200">
 <img src="assets/images/home_page.png" width="200">
 <img src="assets/images/player_page.png" width="200">
-<img src="assets/images/sliding.gif" width="200">
 </p>
 
 
