@@ -36,10 +36,6 @@ class BottomCard extends HookWidget {
 
   @override
   Widget build(BuildContext context) {
-    // final pageController = usePageController(
-    //   initialPage: currentSong,
-    // );
-
     return Visibility(
       visible: currentSong != null,
       maintainState: true,

@@ -10,6 +10,7 @@ Vibel is a lightweight and simple music listening app developed using Flutter. I
 -   **Search**: Easily find songs by title or artist, making navigation a breeze.
 -   **Language Selection**: Choose your preferred language for the app's interface.
 -   **Theme Customization**: Personalize your experience with light or dark themes.
+-   **Notification Controls**: Control your music playback right from the notification bar, making it convenient to pause, play, or skip tracks.
 
 #### Dependencies 📦
 
