@@ -51,17 +51,22 @@ class MusicPlayerCubit extends Cubit<MusicPlayerState> {
   ) : super(const MusicPlayerState.initial()) {
     _indexStreamSubscription = _onCurrentIndexChangedUseCase().listen((event) {
       state.mapOrNull(
-        loaded: (loaded) {
+        loaded: (loaded) async {
           if (event == null) {
             emit(const MusicPlayerState.error());
           } else {
             emit(loaded.copyWith(currentSong: event));
+
             if (loaded.pageController.hasClients) {
-              loaded.pageController.animateToPage(
-                event,
-                duration: AppDimens.mediumAnimation,
-                curve: Curves.easeInOut,
-              );
+              if (loaded.currentSong - event > 1) {
+                loaded.pageController.jumpToPage(event);
+              } else {
+                await loaded.pageController.animateToPage(
+                  event,
+                  duration: AppDimens.mediumAnimation,
+                  curve: Curves.easeInOut,
+                );
+              }
             }
           }
         },
@@ -131,9 +136,9 @@ class MusicPlayerCubit extends Cubit<MusicPlayerState> {
     );
   }
 
-  void nextButtonClicked() => _seekNextUseCase();
+  Future<void> nextButtonClicked() async => await _seekNextUseCase();
 
-  void prevButtonClicked() => _seekPreviousUseCase();
+  Future<void> prevButtonClicked() async => await _seekPreviousUseCase();
 
   void pauseorResume(int index) {
     state.mapOrNull(

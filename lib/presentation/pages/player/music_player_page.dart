@@ -1,8 +1,10 @@
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:go_router/go_router.dart';
 import 'package:hooked_bloc/hooked_bloc.dart';
 import 'package:on_audio_query/on_audio_query.dart';
+import 'package:vibel/generated/local_keys.g.dart';
 import 'package:vibel/presentation/pages/player/cubit/music_player_cubit.dart';
 import 'package:vibel/presentation/pages/player/widgets/player_controls.dart';
 import 'package:vibel/presentation/pages/player/widgets/song_info.dart';
@@ -48,7 +50,7 @@ class MusicPlayerPage extends HookWidget {
       child: Scaffold(
         body: CustomScrollView(
           slivers: [
-            const AppBarWidget(title: 'Now playing'),
+            AppBarWidget(title: LocaleKeys.player_app_bar.tr()),
             ...state.map(
               initial: (initial) => [
                 const SliverFillRemaining(

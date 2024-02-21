@@ -22,7 +22,6 @@ class SortAlphabeticallyButton extends StatelessWidget {
                 FontAwesomeIcons.arrowDownAZ,
               ),
               onPressed: () {
-                cubit.sortAlphabetically();
                 sortedAsc.value = true;
               },
             )
@@ -31,7 +30,6 @@ class SortAlphabeticallyButton extends StatelessWidget {
                 FontAwesomeIcons.arrowUpAZ,
               ),
               onPressed: () {
-                cubit.sortAlphabetically(reverse: true);
                 sortedAsc.value = false;
               },
             ),

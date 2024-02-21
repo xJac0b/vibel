@@ -30,7 +30,7 @@ class PlayerControls extends StatelessWidget {
           alignment: Alignment.bottomLeft,
           icon: Icon(
             FontAwesomeIcons.shuffle,
-            color: isShuffle ? context.colors.primary : context.colors.hint,
+            color: isShuffle ? context.colors.primary : context.colors.text,
             size: 20,
           ),
           onPressed: () => cubit.shuffle(),
@@ -64,7 +64,7 @@ class PlayerControls extends StatelessWidget {
               icon: Icon(
                 FontAwesomeIcons.repeat,
                 color: switch (loopMode) {
-                  LoopMode.off => context.colors.hint,
+                  LoopMode.off => context.colors.text,
                   LoopMode.all => context.colors.primary,
                   LoopMode.one => context.colors.primary,
                 },

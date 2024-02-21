@@ -24,7 +24,7 @@ class AppTheme {
   ThemeData get theme =>
       (colors == AppColors.dark ? ThemeData.dark() : ThemeData.light())
           .copyWith(
-        iconTheme: IconThemeData(color: colors.hint),
+        iconTheme: IconThemeData(color: colors.text),
         highlightColor: Colors.transparent,
         splashColor: Colors.transparent,
         hoverColor: colors.hint.withOpacity(0.3),

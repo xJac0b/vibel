@@ -25,6 +25,7 @@ class AudioPlayerDataSource {
           )
           .toList(),
     );
+
     await audioPlayer.setAudioSource(
       playlist,
       initialIndex: 0,

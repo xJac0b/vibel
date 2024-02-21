@@ -1,9 +1,15 @@
 {
-    "hello": "hello",
     "theme":{
         "light": "Light",
         "dark": "Dark",
         "system": "System"
+    },
+    "home":{
+        "search": "Search song"
+    },
+    "player":
+    {
+        "app_bar": "Now playing"
     },
     "settings":
     {

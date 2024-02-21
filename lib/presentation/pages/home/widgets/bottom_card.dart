@@ -56,11 +56,7 @@ class BottomCard extends HookWidget {
               cubit.musicPlayer();
               await context.push(
                 Routes.player,
-                extra: (
-                  songs,
-                  currentSong,
-                  paused,
-                ),
+                extra: (songs, currentSong, paused),
               );
               cubit.updateAfterPlayerClosing();
             },

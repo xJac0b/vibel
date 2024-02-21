@@ -69,15 +69,11 @@ class SongPositionSlider extends HookWidget {
                   children: [
                     Text(
                       pos.format(),
-                      style: AppTypography.of(context).subtitleSmall.copyWith(
-                            color: context.colors.hint,
-                          ),
+                      style: AppTypography.of(context).subtitleSmall.copyWith(),
                     ),
                     Text(
                       dur.format(),
-                      style: AppTypography.of(context).subtitleSmall.copyWith(
-                            color: context.colors.hint,
-                          ),
+                      style: AppTypography.of(context).subtitleSmall.copyWith(),
                     ),
                   ],
                 );

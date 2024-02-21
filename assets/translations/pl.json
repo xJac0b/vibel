@@ -1,9 +1,15 @@
 {
-    "hello": "cześć",
     "theme":{
         "light": "Jasny",
         "dark": "Ciemny",
         "system": "Systemowy"
+    },
+    "home":{
+        "search": "Szukaj utworu"
+    },
+    "player":
+    {
+        "app_bar": "Odtwarzanie"
     },
     "settings":
     {

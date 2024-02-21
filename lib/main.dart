@@ -1,7 +1,6 @@
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:flutter_phoenix/flutter_phoenix.dart';
 import 'package:hooked_bloc/hooked_bloc.dart';
 import 'package:injecteo/injecteo.dart';
 import 'package:just_audio_background/just_audio_background.dart';
@@ -44,7 +43,7 @@ Future<EasyLocalization> _easyLocalization() async {
     saveLocale: true,
     child: HookedBlocConfigProvider(
       injector: () => sl,
-      child: Phoenix(child: const App()),
+      child: const App(),
     ),
   );
 }
