@@ -79,9 +79,7 @@ class AudioList extends StatelessWidget {
                         ),
                         Text(
                           audios[index].artistName,
-                          style: AppTypography.of(context)
-                              .overline
-                              .copyWith(color: context.colors.hint),
+                          style: AppTypography.of(context).caption,
                         ),
                       ],
                     ),

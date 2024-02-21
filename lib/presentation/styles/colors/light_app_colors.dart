@@ -5,8 +5,8 @@ import 'package:vibel/presentation/styles/colors/app_colors.dart';
 class LightAppColor extends BaseColors {
   const LightAppColor()
       : super(
-          primary: const Color(0xFFbdb6af),
-          background: const Color(0xFFededed),
+          primary: const Color(0xff8ebbff),
+          background: const Color(0xFFfefefe),
           text: const Color(0xff333333),
           error: const Color(0xffFF0000),
           hint: const Color(0xFF444444),

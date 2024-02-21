@@ -13,6 +13,7 @@ import 'package:vibel/presentation/app.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
   // Injecteo
   await configureDependencies(Environment.prod);
 

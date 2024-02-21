@@ -25,6 +25,9 @@ class AudioPlayerRepositoryImpl implements AudioPlayerRepository {
       _audioPlayerDataSource.currentIndexStream;
 
   @override
+  int? get currentIndex => _audioPlayerDataSource.currentIndex;
+
+  @override
   Stream<bool> get shuffleModeEnabledStream =>
       _audioPlayerDataSource.shuffleModeEnabledStream;
 

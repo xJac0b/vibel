@@ -4,6 +4,7 @@ import 'package:freezed_annotation/freezed_annotation.dart';
 import 'package:injecteo/injecteo.dart';
 import 'package:just_audio/just_audio.dart';
 import 'package:on_audio_query/on_audio_query.dart';
+import 'package:vibel/domain/audio_player/use_cases/get_current_index_use_case.dart';
 import 'package:vibel/domain/audio_player/use_cases/get_player_state_use_case.dart';
 import 'package:vibel/domain/audio_player/use_cases/on_current_index_changed_use_case.dart';
 import 'package:vibel/domain/audio_player/use_cases/on_loop_mode_changed_use_case.dart';
@@ -34,22 +35,23 @@ class HomeCubit extends Cubit<HomeState> {
     this._onCurrentIndexChangedUseCase,
     this._onShuffleModeChangedUseCase,
     this._onLoopModeChangedUseCase,
+    this._getCurrentIndexUseCase,
   ) : super(const HomeState.initial()) {
     _onCurrentIndexChangedUseCase().listen((event) {
       state.mapOrNull(
         loaded: (loaded) async {
-          if (event != null && loaded.musicPlayerOpen) {
+          if (event != null && loaded.currentSong != event) {
             loaded.bottomCardController.jumpToPage(event);
+            state.mapOrNull(
+              loaded: (value) {
+                emit(
+                  value.copyWith(
+                    currentSong: event,
+                  ),
+                );
+              },
+            );
           }
-          state.mapOrNull(
-            loaded: (value) {
-              emit(
-                value.copyWith(
-                  currentSong: event,
-                ),
-              );
-            },
-          );
         },
       );
     });
@@ -88,6 +90,7 @@ class HomeCubit extends Cubit<HomeState> {
   final OnCurrentIndexChangedUseCase _onCurrentIndexChangedUseCase;
   final OnShuffleModeChangedUseCase _onShuffleModeChangedUseCase;
   final OnLoopModeChangedUseCase _onLoopModeChangedUseCase;
+  final GetCurrentIndexUseCase _getCurrentIndexUseCase;
 
   Future<void> requestPermission() async {
     await audioQuery.permissionsRequest(retryRequest: true);
@@ -126,7 +129,7 @@ class HomeCubit extends Cubit<HomeState> {
     );
   }
 
-  void updateAfterPlayerClosing() {
+  void closeMusicPlayer() {
     state.mapOrNull(
       loaded: (value) {
         emit(
@@ -163,7 +166,15 @@ class HomeCubit extends Cubit<HomeState> {
     state.mapOrNull(
       loaded: (loaded) async {
         final newIndex = index % loaded.songs.length;
-        if (loaded.musicPlayerOpen || loaded.currentSong == newIndex) return;
+        if (loaded.musicPlayerOpen ||
+            loaded.currentSong == newIndex ||
+            _getCurrentIndexUseCase() == newIndex) return;
+
+        emit(
+          loaded.copyWith(
+            currentSong: newIndex,
+          ),
+        );
 
         await _seekUseCase(Duration.zero, newIndex);
         await _playAudioUseCase();

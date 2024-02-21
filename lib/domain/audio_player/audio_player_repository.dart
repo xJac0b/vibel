@@ -6,6 +6,7 @@ abstract class AudioPlayerRepository {
   Future<void> play();
   Future<void> seek(Duration position, int? index);
   Stream<int?> get currentIndexStream;
+  int? get currentIndex;
   Future<void> seekNext();
   Future<void> seekPrevious();
   Future<void> setLoopMode(LoopMode mode);

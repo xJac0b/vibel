@@ -43,6 +43,8 @@ class AudioPlayerDataSource {
 
   Stream<int?> get currentIndexStream => audioPlayer.currentIndexStream;
 
+  int? get currentIndex => audioPlayer.currentIndex;
+
   Stream<LoopMode> get loopModeStream => audioPlayer.loopModeStream;
 
   Stream<bool> get shuffleModeEnabledStream =>

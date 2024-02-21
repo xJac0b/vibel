@@ -58,7 +58,7 @@ class BottomCard extends HookWidget {
                 Routes.player,
                 extra: (songs, currentSong, paused),
               );
-              cubit.updateAfterPlayerClosing();
+              cubit.closeMusicPlayer();
             },
             child: Card(
               shape: const RoundedRectangleBorder(
@@ -133,7 +133,7 @@ class BottomCard extends HookWidget {
                                   ),
                                   Text(
                                     songs[index].artistName,
-                                    style: AppTypography.of(context).overline,
+                                    style: AppTypography.of(context).caption,
                                   ),
                                 ],
                               );

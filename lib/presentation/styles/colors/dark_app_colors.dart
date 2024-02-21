@@ -5,7 +5,7 @@ import 'package:vibel/presentation/styles/colors/app_colors.dart';
 class DarkAppColor extends BaseColors {
   const DarkAppColor()
       : super(
-          primary: const Color(0xff8ebbff),
+          primary: const Color(0xff7eabef),
           background: const Color(0xff24293e),
           text: const Color(0xfff4f5fc),
           error: const Color(0xffFF0000),
